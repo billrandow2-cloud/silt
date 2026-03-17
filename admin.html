@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - S.I.L.T. System</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Floating Particles Background -->
+    <div class="particles"></div>
+
+    <!-- Header Trigger Zone -->
+    <div class="header-trigger"></div>
+
+    <!-- Floating Header -->
+    <header class="floating-header visible">
+        <div class="header-content">
+            <a href="admin.html" class="logo">
+                <span>◆</span> S.I.L.T. Admin
+            </a>
+            <nav>
+                <ul class="nav-links">
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="#" onclick="logout()">Sair</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Dashboard Container -->
+    <div class="dashboard">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div>
+                <h1>Painel Administrativo</h1>
+                <p style="color: var(--text-secondary);">Gerencie usuários, pools e dados AAVE</p>
+            </div>
+
+            <div class="user-info">
+                <div class="user-avatar" style="background: linear-gradient(135deg, #ef4444, #dc2626);" id="admin-avatar">A</div>
+            </div>
+        </div>
+
+        <!-- Admin Grid -->
+        <div class="admin-grid">
+            <!-- Sidebar -->
+            <div class="admin-sidebar">
+                <h3>Menu</h3>
+                <ul class="admin-menu">
+                    <li>
+                        <button class="active" onclick="showAdminSection('users')" data-section="users">
+                            <span>👥</span> Usuários
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="showAdminSection('pools')" data-section="pools">
+                            <span>💰</span> Dados de Pools
+                        </button>
+                    </li>
+                    <li>
+                        <button onclick="showAdminSection('aave')" data-section="aave">
+                            <span>🏦</span> Dados AAVE
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Content -->
+            <div class="admin-content">
+                <!-- Users Section -->
+                <div id="admin-users" class="admin-section active">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+                        <h2>Gerenciar Usuários</h2>
+                        <button class="neon-btn" onclick="openModal('create-user-modal')">
+                            + Novo Usuário
+                        </button>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuário</th>
+                                    <th>Email</th>
+                                    <th>Função</th>
+                                    <th>Criado em</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">Carregando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pools Section -->
+                <div id="admin-pools" class="admin-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+                        <h2>Gerenciar Dados de Pools</h2>
+                        <button class="neon-btn" onclick="openModal('add-pool-modal')">
+                            + Adicionar Dados
+                        </button>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label>Filtrar por Usuário</label>
+                        <select id="pool-user-filter" onchange="loadUserPools()">
+                            <option value="">Todos os usuários</option>
+                        </select>
+                    </div>
+
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Usuário</th>
+                                    <th>Mês</th>
+                                    <th>Semana</th>
+                                    <th>Pool</th>
+                                    <th>Investido</th>
+                                    <th>Lucro</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pools-table-body">
+                                <tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">Selecione um usuário</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AAVE Section -->
+                <div id="admin-aave" class="admin-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+                        <h2>Gerenciar Dados AAVE</h2>
+                        <button class="neon-btn" onclick="openModal('add-aave-modal')">
+                            + Atualizar Dados
+                        </button>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label>Selecionar Usuário</label>
+                        <select id="aave-user-filter" onchange="loadUserAave()">
+                            <option value="">Selecione um usuário...</option>
+                        </select>
+                    </div>
+
+                    <div id="aave-data-display" style="display: none;">
+                        <div class="aave-cards" style="margin-bottom: 24px;">
+                            <div class="glass-card aave-card">
+                                <div class="aave-icon">🏦</div>
+                                <h3>Saldo AAVE</h3>
+                                <div class="aave-value" id="admin-aave-balance">$0.00</div>
+                            </div>
+
+                            <div class="glass-card aave-card">
+                                <div class="aave-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">💳</div>
+                                <h3>Valor Emprestado</h3>
+                                <div class="aave-value" id="admin-borrow-value">$0.00</div>
+                            </div>
+
+                            <div class="glass-card aave-card">
+                                <div class="aave-icon" style="background: linear-gradient(135deg, #22c55e, #16a34a);">📈</div>
+                                <h3>Patrimônio Líquido</h3>
+                                <div class="aave-value" id="admin-net-value">$0.00</div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card" style="margin-top: 24px;">
+                            <h3 style="margin-bottom: 16px;">Histórico de Atualizações</h3>
+                            <p style="color: var(--text-secondary);">Última atualização: <span id="aave-last-updated">-</span></p>
+                        </div>
+                    </div>
+
+                    <p id="aave-no-data" style="text-align: center; color: var(--text-secondary); padding: 40px; display: none;">
+                        Nenhum dado AAVE encontrado para este usuário.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create User Modal -->
+    <div class="modal-overlay" id="create-user-modal">
+        <div class="modal">
+            <h3>Criar Novo Usuário</h3>
+            <form id="create-user-form">
+                <div class="form-group">
+                    <label>Nome de Usuário *</label>
+                    <input type="text" id="new-username" required placeholder="Digite o nome de usuário">
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="new-email" required placeholder="Digite o email">
+                </div>
+                <div class="form-group">
+                    <label>Senha *</label>
+                    <input type="password" id="new-password" required placeholder="Digite a senha" minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Função *</label>
+                    <select id="new-role" required>
+                        <option value="user">Usuário</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="outline-btn" onclick="closeModal('create-user-modal')">Cancelar</button>
+                    <button type="submit" class="neon-btn" id="create-user-btn">Criar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal-overlay" id="edit-user-modal">
+        <div class="modal">
+            <h3>Editar Usuário</h3>
+            <form id="edit-user-form">
+                <input type="hidden" id="edit-user-id">
+                <div class="form-group">
+                    <label>Nome de Usuário</label>
+                    <input type="text" id="edit-username" readonly style="background: rgba(255,255,255,0.05); color: var(--text-muted);">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="edit-email" readonly style="background: rgba(255,255,255,0.05); color: var(--text-muted);">
+                </div>
+                <div class="form-group">
+                    <label>Função *</label>
+                    <select id="edit-role" required>
+                        <option value="user">Usuário</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="outline-btn" onclick="closeModal('edit-user-modal')">Cancelar</button>
+                    <button type="submit" class="neon-btn">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Pool Data Modal -->
+    <div class="modal-overlay" id="add-pool-modal">
+        <div class="modal">
+            <h3>Adicionar Dados de Pool</h3>
+            <form id="add-pool-form">
+                <div class="form-group">
+                    <label>Usuário *</label>
+                    <select id="pool-user" required>
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Mês *</label>
+                    <select id="pool-month" required>
+                        <option value="Janeiro">Janeiro</option>
+                        <option value="Fevereiro">Fevereiro</option>
+                        <option value="Março">Março</option>
+                        <option value="Abril">Abril</option>
+                        <option value="Maio">Maio</option>
+                        <option value="Junho">Junho</option>
+                        <option value="Julho">Julho</option>
+                        <option value="Agosto">Agosto</option>
+                        <option value="Setembro">Setembro</option>
+                        <option value="Outubro">Outubro</option>
+                        <option value="Novembro">Novembro</option>
+                        <option value="Dezembro">Dezembro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Semana *</label>
+                    <select id="pool-week" required>
+                        <option value="Week 1">Semana 1</option>
+                        <option value="Week 2">Semana 2</option>
+                        <option value="Week 3">Semana 3</option>
+                        <option value="Week 4">Semana 4</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Pool *</label>
+                    <select id="pool-name" required>
+                        <option value="CES/USDT">CES/USDT</option>
+                        <option value="DAI/sLGNS">DAI/sLGNS</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Valor Investido (USD) *</label>
+                    <input type="number" id="pool-invested" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Valor do Lucro (USD) *</label>
+                    <input type="number" id="pool-profit" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="outline-btn" onclick="closeModal('add-pool-modal')">Cancelar</button>
+                    <button type="submit" class="neon-btn">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Pool Modal -->
+    <div class="modal-overlay" id="edit-pool-modal">
+        <div class="modal">
+            <h3>Editar Dados de Pool</h3>
+            <form id="edit-pool-form">
+                <input type="hidden" id="edit-pool-id">
+                <div class="form-group">
+                    <label>Mês</label>
+                    <select id="edit-pool-month" required>
+                        <option value="Janeiro">Janeiro</option>
+                        <option value="Fevereiro">Fevereiro</option>
+                        <option value="Março">Março</option>
+                        <option value="Abril">Abril</option>
+                        <option value="Maio">Maio</option>
+                        <option value="Junho">Junho</option>
+                        <option value="Julho">Julho</option>
+                        <option value="Agosto">Agosto</option>
+                        <option value="Setembro">Setembro</option>
+                        <option value="Outubro">Outubro</option>
+                        <option value="Novembro">Novembro</option>
+                        <option value="Dezembro">Dezembro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Semana</label>
+                    <select id="edit-pool-week" required>
+                        <option value="Week 1">Semana 1</option>
+                        <option value="Week 2">Semana 2</option>
+                        <option value="Week 3">Semana 3</option>
+                        <option value="Week 4">Semana 4</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Pool</label>
+                    <select id="edit-pool-name" required>
+                        <option value="CES/USDT">CES/USDT</option>
+                        <option value="DAI/sLGNS">DAI/sLGNS</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Valor Investido (USD)</label>
+                    <input type="number" id="edit-pool-invested" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Valor do Lucro (USD)</label>
+                    <input type="number" id="edit-pool-profit" step="0.01" min="0" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="outline-btn" onclick="closeModal('edit-pool-modal')">Cancelar</button>
+                    <button type="submit" class="neon-btn">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add AAVE Data Modal -->
+    <div class="modal-overlay" id="add-aave-modal">
+        <div class="modal">
+            <h3>Atualizar Dados AAVE</h3>
+            <form id="add-aave-form">
+                <div class="form-group">
+                    <label>Usuário *</label>
+                    <select id="aave-user" required>
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Saldo AAVE (USD) *</label>
+                    <input type="number" id="aave-balance-input" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label>Valor Emprestado (USD) *</label>
+                    <input type="number" id="aave-borrow-input" step="0.01" min="0" required placeholder="0.00">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="outline-btn" onclick="closeModal('add-aave-modal')">Cancelar</button>
+                    <button type="submit" class="neon-btn">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Processando...</p>
+    </div>
+
+    <!-- Supabase Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
