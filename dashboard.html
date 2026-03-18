@@ -3,23 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com https://cdn.jsdelivr.net;">
     <title>Dashboard - S.I.L.T. System</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <!-- Floating Particles Background -->
     <div class="particles"></div>
-
-    <!-- Header Trigger Zone -->
     <div class="header-trigger"></div>
 
-    <!-- Floating Header -->
     <header class="floating-header visible">
         <div class="header-content">
-            <a href="dashboard.html" class="logo">
-                <span>◆</span> S.I.L.T.
-            </a>
+            <a href="dashboard.html" class="logo"><span>◆</span> S.I.L.T.</a>
             <nav>
                 <ul class="nav-links">
                     <li><a href="dashboard.html" class="active">Dashboard</a></li>
@@ -31,154 +26,140 @@
         </div>
     </header>
 
-    <!-- Dashboard Container -->
     <div class="dashboard">
-        <!-- Dashboard Header -->
         <div class="dashboard-header">
             <div>
                 <h1>Dashboard</h1>
-                <p style="color: var(--text-secondary);">Bem-vindo de volta, <span id="user-name">Usuário</span> 👋</p>
+                <p style="color:var(--text-secondary);">Bem-vindo de volta, <span id="user-name">Usuário</span> 👋</p>
             </div>
-
             <div class="user-info">
-                <!-- Currency Switcher -->
                 <div class="currency-switcher">
                     <button data-currency="USD" onclick="switchCurrency('USD')">USD</button>
                     <button data-currency="BRL" onclick="switchCurrency('BRL')">BRL</button>
                 </div>
-
                 <div class="user-avatar" id="user-avatar">U</div>
             </div>
         </div>
 
-        <!-- Navigation Tabs -->
         <div class="nav-tabs">
-            <button class="active" onclick="showSection('overview')" data-section="overview">
-                <span>📊</span> Visão Geral
-            </button>
-            <button onclick="showSection('pools')" data-section="pools">
-                <span>💰</span> Pools
-            </button>
-            <button onclick="showSection('aave')" data-section="aave">
-                <span>🏦</span> AAVE
-            </button>
+            <button class="active" onclick="showSection('overview')" data-section="overview"><span>📊</span> Visão Geral</button>
+            <button onclick="showSection('pools')"   data-section="pools"><span>💰</span> Pools</button>
+            <button onclick="showSection('aave')"    data-section="aave"><span>🏦</span> AAVE</button>
         </div>
 
-        <!-- Section Content -->
         <div class="section-content">
-            <!-- Overview Section -->
+
+            <!-- OVERVIEW -->
             <div id="overview-section" class="section active">
-                <!-- Stats Grid -->
+                <!-- Label do mês de referência -->
+                <p id="current-month-label" style="color:var(--text-muted);font-size:13px;margin-bottom:16px;"></p>
+
                 <div class="stats-grid">
                     <div class="glass-card stat-card">
                         <div class="stat-icon purple">💎</div>
-                        <div class="stat-label">Saldo Total</div>
-                        <div class="stat-value" id="total-balance">$0.00</div>
-                        <div class="stat-change positive" id="total-change">
-                            <span>↑</span> Calculando...
-                        </div>
+                        <div class="stat-label">Total (pagando empréstimo)</div>
+                        <div class="stat-value" id="total-balance" data-value="0">$0.00</div>
+                        <div class="stat-change positive"><span>↑</span> Pools + AAVE</div>
                     </div>
-
                     <div class="glass-card stat-card">
                         <div class="stat-icon green">💰</div>
-                        <div class="stat-label">Saldo em Pools</div>
-                        <div class="stat-value" id="pools-balance">$0.00</div>
-                        <div class="stat-change positive">
-                            <span>↑</span> Investimentos
-                        </div>
+                        <div class="stat-label">Valor Atual Pools</div>
+                        <div class="stat-value" id="pools-balance" data-value="0">$0.00</div>
+                        <div class="stat-change positive"><span>↑</span> Mês atual</div>
                     </div>
-
                     <div class="glass-card stat-card">
                         <div class="stat-icon blue">🏦</div>
-                        <div class="stat-label">Saldo AAVE</div>
-                        <div class="stat-value" id="aave-balance">$0.00</div>
-                        <div class="stat-change" id="aave-change">
-                            <span>=</span> Patrimônio líquido
-                        </div>
+                        <div class="stat-label">AAVE (WETH)</div>
+                        <div class="stat-value" id="aave-balance" data-value="0">$0.00</div>
+                        <div class="stat-change"><span>=</span> Ativo AAVE</div>
                     </div>
                 </div>
 
-                <!-- Charts Grid -->
-                <div class="charts-grid">
+                <!-- Totais com/sem empréstimo -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
+                    <div class="glass-card" style="padding:20px;border:1px solid rgba(239,68,68,0.2);">
+                        <p style="color:var(--text-muted);font-size:13px;margin-bottom:8px;">SEM pagar empréstimo</p>
+                        <p class="stat-value" id="total-sem-pagar" data-value="0" style="font-size:24px;">$0.00</p>
+                        <p style="color:var(--text-muted);font-size:11px;margin-top:4px;">WETH − Emprést. + Pools</p>
+                    </div>
+                    <div class="glass-card" style="padding:20px;border:1px solid rgba(34,197,94,0.2);">
+                        <p style="color:var(--text-muted);font-size:13px;margin-bottom:8px;">PAGANDO empréstimo</p>
+                        <p class="stat-value" id="total-pagando" data-value="0" style="font-size:24px;">$0.00</p>
+                        <p style="color:var(--text-muted);font-size:11px;margin-top:4px;">WETH + Pools</p>
+                    </div>
+                </div>
+
+                <div class="charts-grid" style="margin-top:24px;">
                     <div class="glass-card chart-card">
                         <h3>Distribuição do Portfólio</h3>
-                        <div class="chart-container">
-                            <canvas id="portfolio-chart"></canvas>
-                        </div>
+                        <div class="chart-container"><canvas id="portfolio-chart"></canvas></div>
                     </div>
-
                     <div class="glass-card chart-card">
-                        <h3>Performance Mensal</h3>
-                        <div class="chart-container">
-                            <canvas id="trend-chart"></canvas>
-                        </div>
+                        <h3>Pools por Mês</h3>
+                        <div class="chart-container"><canvas id="trend-chart"></canvas></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Pools Section -->
+            <!-- POOLS -->
             <div id="pools-section" class="section">
                 <div id="months-view">
-                    <h2 style="margin-bottom: 24px;">Selecione um Mês</h2>
-                    <div class="months-grid" id="months-grid">
-                        <!-- Months will be populated by JavaScript -->
-                    </div>
+                    <h2 style="margin-bottom:24px;">Selecione um Mês</h2>
+                    <div class="months-grid" id="months-grid"></div>
                 </div>
-
                 <div id="weeks-view" class="weeks-container">
-                    <button class="outline-btn back-button" onclick="showMonths()">
-                        ← Voltar aos meses
-                    </button>
-                    <h2 id="selected-month-title" style="margin-bottom: 24px;">Janeiro</h2>
-
-                    <div id="weeks-container">
-                        <!-- Weeks will be populated by JavaScript -->
-                    </div>
+                    <button class="outline-btn back-button" onclick="showMonths()">← Voltar aos meses</button>
+                    <h2 id="selected-month-title" style="margin-bottom:24px;">Janeiro</h2>
+                    <div id="weeks-container"></div>
                 </div>
             </div>
 
-            <!-- AAVE Section -->
+            <!-- AAVE -->
             <div id="aave-section" class="section">
+
+                <!-- Seletor de mês -->
+                <div class="glass-card" style="padding:16px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                    <span style="color:var(--text-secondary);font-size:14px;">📅 Mês de referência:</span>
+                    <select id="aave-month-selector" onchange="onAaveMonthChange()"
+                        style="background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);color:var(--text-primary);padding:8px 16px;border-radius:8px;font-size:14px;cursor:pointer;">
+                    </select>
+                </div>
+
                 <div class="aave-cards">
                     <div class="glass-card aave-card">
                         <div class="aave-icon">🏦</div>
-                        <h3>Saldo AAVE</h3>
-                        <div class="aave-value" id="aave-display">$0.00</div>
-                        <p class="aave-subtitle">Saldo total em AAVE</p>
+                        <h3>WETH (Ativo)</h3>
+                        <div class="aave-value" id="aave-display" data-value="0">$0.00</div>
+                        <p class="aave-subtitle">Ativo real no AAVE</p>
                     </div>
-
                     <div class="glass-card aave-card">
-                        <div class="aave-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">💳</div>
-                        <h3>Valor Emprestado</h3>
-                        <div class="aave-value" id="borrow-display">$0.00</div>
-                        <p class="aave-subtitle">Total de empréstimos ativos</p>
+                        <div class="aave-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626);">💳</div>
+                        <h3>USDTO (Empréstimo)</h3>
+                        <div class="aave-value" id="borrow-display" data-value="0">$0.00</div>
+                        <p class="aave-subtitle">Valor do empréstimo</p>
                     </div>
-
                     <div class="glass-card aave-card">
-                        <div class="aave-icon" style="background: linear-gradient(135deg, #22c55e, #16a34a);">📈</div>
+                        <div class="aave-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);">📈</div>
                         <h3>Patrimônio Líquido</h3>
-                        <div class="aave-value" id="net-display">$0.00</div>
-                        <p class="aave-subtitle">Saldo - Empréstimos</p>
+                        <div class="aave-value" id="net-display" data-value="0">$0.00</div>
+                        <p class="aave-subtitle">WETH − Empréstimo</p>
                     </div>
                 </div>
 
-                <div class="glass-card chart-card" style="margin-top: 24px;">
+                <div class="glass-card chart-card" style="margin-top:24px;">
                     <h3>Histórico AAVE</h3>
-                    <div class="chart-container">
-                        <canvas id="aave-chart"></canvas>
-                    </div>
+                    <div class="chart-container"><canvas id="aave-chart"></canvas></div>
                 </div>
             </div>
+
         </div>
     </div>
 
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loading" style="display: flex;">
+    <div class="loading-overlay" id="loading" style="display:flex;">
         <div class="spinner"></div>
         <p>Carregando dados...</p>
     </div>
 
-    <!-- Supabase Library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/main.js"></script>
     <script src="js/charts.js"></script>

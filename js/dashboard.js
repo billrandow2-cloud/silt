@@ -1,289 +1,467 @@
 // S.I.L.T. System - Dashboard Script
-// Handles dashboard functionality
 
-// Configuração do Supabase
 const SUPABASE_URL = 'https://upskwiyrdeowzzushwid.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwc2t3aXlyZGVvd3p6dXNod2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3MjE3ODIsImV4cCI6MjA4OTI5Nzc4Mn0.cS50hid0zeCkTGVCs45sb3nnM98U1RfOdaNbWsNg3UM';
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let currentUser = null;
-let currentUsername = '';
-let userPoolData = [];
-let userAaveData = null;
+let currentUser      = null;
+let currentUsername  = '';
+let userPoolData     = [];   // todos os registros de pool
+let allAaveData      = [];   // todos os registros AAVE
+let userAaveData     = null; // AAVE do mês selecionado/mais recente
+let dashExchangeRate = 5.0;
+let currentMonth     = null; // mês aberto na view de semanas
 
-// Inicializar
+const PT_MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+// =====================================================
+// INICIALIZAR
+// =====================================================
+
 document.addEventListener('DOMContentLoaded', async () => {
-    // Verificar sessão
     const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session) {
-        window.location.href = 'login.html';
-        return;
-    }
+    if (!session) { window.location.href = 'login.html'; return; }
 
     currentUser = session.user;
 
-    // Buscar dados do usuário
-    const { data: userData, error: userError } = await supabaseClient
-        .from('users')
-        .select('username')
-        .eq('id', currentUser.id)
-        .single();
-
-    if (userError) {
-        console.error('Erro ao buscar usuário:', userError);
-    }
-
+    const { data: userData } = await supabaseClient
+        .from('users').select('username').eq('id', currentUser.id).single();
     currentUsername = userData?.username || currentUser.email.split('@')[0];
 
-    // Atualizar UI
-    document.getElementById('user-name').textContent = currentUsername;
+    document.getElementById('user-name').textContent   = currentUsername;
     document.getElementById('user-avatar').textContent = currentUsername.charAt(0).toUpperCase();
 
-    // Carregar taxa de câmbio (usa função do main.js)
-    await fetchExchangeRate();
-
-    // Carregar dados
+    await loadExchangeRate();
     await loadDashboardData();
 
-    // Esconder loading
     document.getElementById('loading').style.display = 'none';
 
-    // Inicializar currency
-    const savedCurrency = localStorage.getItem('silt_currency') || 'USD';
-    switchCurrency(savedCurrency);
+    const saved = localStorage.getItem('silt_currency') || 'USD';
+    switchCurrency(saved);
 });
 
-// Carregar dados do dashboard
+// =====================================================
+// CÂMBIO
+// =====================================================
+
+async function loadExchangeRate() {
+    try {
+        const r = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        const d = await r.json();
+        if (d?.rates?.BRL) dashExchangeRate = d.rates.BRL;
+    } catch(e) { console.warn('Taxa padrão:', e); }
+}
+
+function fmt(usd) {
+    const cur = localStorage.getItem('silt_currency') || 'USD';
+    const sym = cur === 'BRL' ? 'R$' : '$';
+    const val = cur === 'BRL' ? usd * dashExchangeRate : usd;
+    return sym + val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// =====================================================
+// CARREGAR DADOS
+// =====================================================
+
 async function loadDashboardData() {
-    // Carregar dados de pools
-    const { data: pools, error: poolError } = await supabaseClient
-        .from('pool_data')
-        .select('*')
+    // Todos os registros de pool
+    const { data: pools } = await supabaseClient
+        .from('pool_data').select('*')
         .eq('user_id', currentUser.id)
         .order('created_at', { ascending: false });
+    userPoolData = pools || [];
 
-    if (!poolError) {
-        userPoolData = pools || [];
-    }
-
-    // Carregar dados AAVE
-    const { data: aave, error: aaveError } = await supabaseClient
-        .from('aave_data')
-        .select('*')
+    // Todos os registros AAVE
+    const { data: aaveAll } = await supabaseClient
+        .from('aave_data').select('*')
         .eq('user_id', currentUser.id)
-        .order('updated_at', { ascending: false })
-        .limit(1)
-        .single();
+        .order('updated_at', { ascending: false });
+    allAaveData = aaveAll || [];
 
-    if (!aaveError) {
-        userAaveData = aave;
-    }
+    // AAVE mais recente por padrão
+    userAaveData = allAaveData[0] || null;
 
-    // Calcular totais
+    // Preencher selector de mês do AAVE
+    populateAaveMonthSelector();
+
+    // Overview usa SOMENTE o mês mais recente com dados
     updateDashboardValues();
-
-    // Inicializar charts
     initCharts();
-
-    // Inicializar meses
     initMonthsGrid();
 }
 
-// Atualizar valores do dashboard
-function updateDashboardValues() {
-    let totalInvested = 0;
-    let totalProfit = 0;
+// =====================================================
+// LÓGICA PRINCIPAL — usa só o mês mais recente
+// =====================================================
 
-    userPoolData.forEach(pool => {
-        totalInvested += parseFloat(pool.invested_value) || 0;
-        totalProfit += parseFloat(pool.profit_value) || 0;
-    });
-
-    const poolsBalance = totalInvested + totalProfit;
-    const aaveBalance = userAaveData ? (parseFloat(userAaveData.aave_balance) || 0) : 0;
-    const borrowValue = userAaveData ? (parseFloat(userAaveData.borrow_value) || 0) : 0;
-    const totalBalance = poolsBalance + aaveBalance - borrowValue;
-
-    // Atualizar display
-    document.getElementById('total-balance').dataset.value = totalBalance;
-    document.getElementById('pools-balance').dataset.value = poolsBalance;
-    document.getElementById('aave-balance').dataset.value = aaveBalance;
-
-    document.getElementById('aave-display').dataset.value = aaveBalance;
-    document.getElementById('borrow-display').dataset.value = borrowValue;
-    document.getElementById('net-display').dataset.value = aaveBalance - borrowValue;
-
-    // Atualizar valores formatados (usa função do main.js)
-    updateDisplayedValues();
+function getLatestMonth() {
+    // Descobre qual é o mês mais recente com dados de pool
+    const months = [...new Set(userPoolData.map(p => p.month))];
+    if (months.length === 0) return null;
+    // Ordena pelos meses do calendário
+    return months.sort((a, b) => PT_MONTHS.indexOf(b) - PT_MONTHS.indexOf(a))[0];
 }
 
-// Inicializar charts
-function initCharts() {
-    const poolsBalance = parseFloat(document.getElementById('pools-balance').dataset.value) || 0;
-    const aaveBalance = parseFloat(document.getElementById('aave-balance').dataset.value) || 0;
+function getPoolsValueForMonth(month) {
+    // Para um mês, pega o current_value mais recente de cada pool distinta
+    const positions = {};
+    userPoolData.filter(p => p.month === month).forEach(p => {
+        const current = parseFloat(p.current_value || 0);
+        const initial = parseFloat(p.initial_value || p.invested_value || 0);
+        const contrib = parseFloat(p.contribution_value || 0);
+        const profit  = parseFloat(p.profit_value || 0);
+        if (!positions[p.pool_name]) positions[p.pool_name] = { current: 0, fallback: 0 };
+        if (current > 0) positions[p.pool_name].current = current;
+        positions[p.pool_name].fallback = initial + contrib + profit;
+    });
 
-    if (window.SILTCharts) {
-        window.SILTCharts.createPortfolioChart('portfolio-chart', {
-            pools: poolsBalance,
-            aave: aaveBalance
-        });
+    let total = 0;
+    Object.values(positions).forEach(pos => {
+        total += pos.current > 0 ? pos.current : pos.fallback;
+    });
+    return total;
+}
 
-        const monthlyData = calculateMonthlyData();
-        window.SILTCharts.createTrendChart('trend-chart', {
-            labels: monthlyData.labels,
-            values: monthlyData.values
-        });
+function updateDashboardValues() {
+    const latestMonth = getLatestMonth();
+    if (!latestMonth) return;
 
-        window.SILTCharts.createTrendChart('aave-chart', {
-            labels: ['Início', 'Atual'],
-            values: [aaveBalance * 0.9, aaveBalance]
-        });
+    const poolsBalance = getPoolsValueForMonth(latestMonth);
+
+    // WETH = ativo AAVE | usdto_value = empréstimo
+    const weth  = parseFloat(userAaveData?.weth_value  || userAaveData?.aave_balance || 0);
+    const borrow= parseFloat(userAaveData?.usdto_value || userAaveData?.borrow_value || 0);
+
+    // Igual à planilha
+    const totalSemPagar = weth - borrow + poolsBalance;
+    const totalPagando  = weth + poolsBalance;
+
+    setVal('total-balance',   totalPagando);
+    setVal('pools-balance',   poolsBalance);
+    setVal('aave-balance',    weth);
+    setVal('aave-display',    weth);
+    setVal('borrow-display',  borrow);
+    setVal('net-display',     weth - borrow);
+    setVal('total-sem-pagar', totalSemPagar);
+    setVal('total-pagando',   totalPagando);
+
+    // Atualizar label do mês atual no overview
+    const label = document.getElementById('current-month-label');
+    if (label) label.textContent = `Referência: ${latestMonth}`;
+
+    updateCurrencyDisplay();
+}
+
+function setVal(id, value) {
+    const el = document.getElementById(id);
+    if (el) el.dataset.value = value;
+}
+
+function updateCurrencyDisplay() {
+    document.querySelectorAll('[data-value]').forEach(el => {
+        el.textContent = fmt(parseFloat(el.dataset.value) || 0);
+    });
+}
+
+// =====================================================
+// SELETOR DE MÊS DO AAVE
+// =====================================================
+
+function populateAaveMonthSelector() {
+    const sel = document.getElementById('aave-month-selector');
+    if (!sel) return;
+
+    // Meses com dados AAVE
+    const aaveMonths = allAaveData.map(a => a.month).filter(Boolean);
+    // Meses com dados de pool
+    const poolMonths = [...new Set(userPoolData.map(p => p.month))];
+    // União de todos os meses com dados
+    const allMonths  = [...new Set([...aaveMonths, ...poolMonths])]
+        .sort((a, b) => PT_MONTHS.indexOf(a) - PT_MONTHS.indexOf(b));
+
+    sel.innerHTML = '';
+    allMonths.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        sel.appendChild(opt);
+    });
+
+    // Selecionar o mais recente por padrão
+    if (allMonths.length > 0) {
+        sel.value = allMonths[allMonths.length - 1];
+        onAaveMonthChange();
     }
 }
 
-// Calcular dados mensais
-function calculateMonthlyData() {
-    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    const monthlyTotals = {};
+function onAaveMonthChange() {
+    const sel   = document.getElementById('aave-month-selector');
+    if (!sel) return;
+    const month = sel.value;
 
-    userPoolData.forEach(pool => {
-        const monthIndex = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-                           .indexOf(pool.month);
-        if (monthIndex >= 0) {
-            const monthKey = months[monthIndex];
-            if (!monthlyTotals[monthKey]) monthlyTotals[monthKey] = 0;
-            monthlyTotals[monthKey] += parseFloat(pool.invested_value) + parseFloat(pool.profit_value);
-        }
+    // Buscar AAVE do mês selecionado
+    userAaveData = allAaveData.find(a => a.month === month) || null;
+
+    // Atualizar cards AAVE
+    const weth  = parseFloat(userAaveData?.weth_value  || userAaveData?.aave_balance || 0);
+    const borrow= parseFloat(userAaveData?.usdto_value || userAaveData?.borrow_value || 0);
+
+    setVal('aave-display',   weth);
+    setVal('borrow-display', borrow);
+    setVal('net-display',    weth - borrow);
+
+    // Atualizar detalhes se existirem
+    const elWeth  = document.getElementById('weth-display');
+    const elUsdto = document.getElementById('usdto-display');
+    if (elWeth)  { elWeth.dataset.value  = weth;   elWeth.textContent  = fmt(weth); }
+    if (elUsdto) { elUsdto.dataset.value = borrow; elUsdto.textContent = fmt(borrow); }
+
+    // Recalcular totais do overview com o AAVE do mês selecionado
+    updateDashboardValues();
+    updateCurrencyDisplay();
+}
+
+// =====================================================
+// TROCAR MOEDA
+// =====================================================
+
+function switchCurrency(currency) {
+    localStorage.setItem('silt_currency', currency);
+    window.CURRENCY = currency;
+    document.querySelectorAll('.currency-switcher button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.currency === currency);
     });
+    updateCurrencyDisplay();
+    initMonthsGrid();
+    refreshWeeksView();
+    if (window.SILTCharts) window.SILTCharts.updateChartsCurrency(dashExchangeRate);
+}
 
-    const labels = [];
-    const values = [];
-    let runningTotal = 0;
+// =====================================================
+// CHARTS — mostra evolução mês a mês
+// =====================================================
 
-    months.forEach(m => {
-        labels.push(m);
-        runningTotal += monthlyTotals[m] || 0;
-        values.push(runningTotal);
+function initCharts() {
+    const pools = parseFloat(document.getElementById('pools-balance')?.dataset.value) || 0;
+    const aave  = parseFloat(document.getElementById('aave-balance')?.dataset.value)  || 0;
+
+    if (window.SILTCharts) {
+        window.SILTCharts.createPortfolioChart('portfolio-chart', { pools, aave });
+
+        // Trend: valor de pools por mês (cada mês independente)
+        const md = calculateMonthlyData();
+        window.SILTCharts.createTrendChart('trend-chart', { labels: md.labels, values: md.values });
+        window.SILTCharts.createTrendChart('aave-chart',  { labels: ['Início','Atual'], values: [aave * 0.9, aave] });
+    }
+}
+
+function calculateMonthlyData() {
+    // Valor atual de pools por mês — cada mês é independente
+    const labels = [], values = [];
+
+    PT_MONTHS.forEach(month => {
+        const mp = userPoolData.filter(p => p.month === month);
+        if (mp.length === 0) return;
+
+        labels.push(month.substring(0, 3));
+        values.push(getPoolsValueForMonth(month));
     });
 
     return { labels, values };
 }
 
-// Inicializar grid de meses
+// =====================================================
+// GRID DE MESES
+// =====================================================
+
 function initMonthsGrid() {
     const grid = document.getElementById('months-grid');
-    const months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-
     grid.innerHTML = '';
 
-    months.forEach(month => {
-        const monthPools = userPoolData.filter(p => p.month === month);
-        const hasData = monthPools.length > 0;
-        const totalValue = hasData
-            ? monthPools.reduce((sum, p) => sum + parseFloat(p.invested_value) + parseFloat(p.profit_value), 0)
-            : 0;
+    PT_MONTHS.forEach(month => {
+        const mp      = userPoolData.filter(p => p.month === month);
+        const hasData = mp.length > 0;
+        if (!hasData) {
+            // Mês vazio: mostrar mesmo assim para referência visual
+            const card = document.createElement('div');
+            card.className = 'glass-card month-card';
+            card.style.opacity = '0.4';
+            card.innerHTML = `<h3>${month}</h3><p class="month-stats" style="color:var(--text-muted);">Sem dados</p>`;
+            grid.appendChild(card);
+            return;
+        }
+
+        let totalProfit = 0;
+        mp.forEach(p => { totalProfit += parseFloat(p.profit_value || 0); });
+        const totalUSD = getPoolsValueForMonth(month);
 
         const card = document.createElement('div');
         card.className = 'glass-card month-card';
         card.onclick = () => showMonth(month);
-
         card.innerHTML = `
             <h3>${month}</h3>
-            <p class="month-stats">${hasData ? formatCurrency(totalValue) : 'Sem dados'}</p>
-            ${hasData ? '<span style="color: var(--success); font-size: 14px;">✓ Dados disponíveis</span>' : ''}
+            <p class="month-stats">${fmt(totalUSD)}</p>
+            <span style="color:var(--success);font-size:14px;">✓ Lucro: ${fmt(totalProfit)}</span>
         `;
-
         grid.appendChild(card);
     });
 }
 
-// Mostrar mês
+// =====================================================
+// SEMANAS
+// =====================================================
+
 function showMonth(month) {
+    currentMonth = month;
     document.getElementById('months-view').style.display = 'none';
     document.getElementById('weeks-view').classList.add('active');
     document.getElementById('selected-month-title').textContent = month;
+    renderWeeks(month);
+}
 
-    const weeksContainer = document.getElementById('weeks-container');
-    weeksContainer.innerHTML = '';
+function renderWeeks(month) {
+    const container = document.getElementById('weeks-container');
+    container.innerHTML = '';
 
-    const monthPools = userPoolData.filter(p => p.month === month);
-
-    if (monthPools.length === 0) {
-        weeksContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Nenhum dado disponível para este mês.</p>';
+    const mp = userPoolData.filter(p => p.month === month);
+    if (mp.length === 0) {
+        container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);padding:40px;">Nenhum dado para este mês.</p>';
         return;
     }
 
+    // Agrupar por semana
     const weeks = {};
-    monthPools.forEach(pool => {
-        if (!weeks[pool.week]) weeks[pool.week] = [];
-        weeks[pool.week].push(pool);
+    mp.forEach(p => {
+        const w = p.week || 'Sem semana';
+        if (!weeks[w]) weeks[w] = [];
+        weeks[w].push(p);
     });
 
-    Object.entries(weeks).forEach(([week, pools]) => {
+    const weekOrder   = ['Semana 1','Semana 2','Semana 3','Semana 4','Semana 5','Total do Mês'];
+    const sortedWeeks = Object.keys(weeks).sort((a, b) => {
+        const ia = weekOrder.indexOf(a), ib = weekOrder.indexOf(b);
+        return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+    });
+
+    const monthPositions = {};
+    let monthTotalProfit = 0;
+
+    sortedWeeks.forEach(week => {
+        const pools    = weeks[week];
         const weekCard = document.createElement('div');
         weekCard.className = 'glass-card week-card';
-
-        let weekTotal = 0;
         let weekProfit = 0;
 
-        const poolsHtml = pools.map(pool => {
-            weekTotal += parseFloat(pool.invested_value) + parseFloat(pool.profit_value);
-            weekProfit += parseFloat(pool.profit_value);
-            return `
-                <tr>
-                    <td>${pool.pool_name}</td>
-                    <td>${formatCurrency(parseFloat(pool.invested_value))}</td>
-                    <td style="color: var(--success);">+${formatCurrency(parseFloat(pool.profit_value))}</td>
-                    <td>${formatCurrency(parseFloat(pool.invested_value) + parseFloat(pool.profit_value))}</td>
-                </tr>
-            `;
+        const rows = pools.map(p => {
+            const initial  = parseFloat(p.initial_value || p.invested_value || 0);
+            const contrib  = parseFloat(p.contribution_value || 0);
+            const yieldPct = parseFloat(p.yield_percent || 0);
+            const profit   = parseFloat(p.profit_value  || 0);
+            const current  = parseFloat(p.current_value || 0);
+
+            weekProfit       += profit;
+            monthTotalProfit += profit;
+
+            if (!monthPositions[p.pool_name]) monthPositions[p.pool_name] = { current: 0, fallback: 0 };
+            if (current > 0) monthPositions[p.pool_name].current = current;
+            monthPositions[p.pool_name].fallback = initial + contrib + profit;
+
+            const diff    = current > 0 ? current - (initial + contrib) : profit;
+            const diffTag = current > 0
+                ? `<span style="color:${diff>=0?'#22c55e':'#ef4444'};font-size:12px;">${diff>=0?'▲':'▼'}${fmt(Math.abs(diff))}</span>`
+                : '';
+
+            return `<tr>
+                <td>${p.pool_name}</td>
+                <td>${fmt(initial + contrib)}</td>
+                <td>${yieldPct > 0 ? yieldPct.toFixed(2)+'%' : '-'}</td>
+                <td style="color:var(--success);">+${fmt(profit)}</td>
+                <td>${current > 0 ? fmt(current)+' '+diffTag : fmt(initial+contrib+profit)}</td>
+            </tr>`;
         }).join('');
 
         weekCard.innerHTML = `
-            <h4>${week}</h4>
+            <h4 style="margin-bottom:12px;">${week}</h4>
             <table class="pools-table">
-                <thead>
-                    <tr>
-                        <th>Pool</th>
-                        <th>Investido</th>
-                        <th>Lucro</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Pool</th><th>Investido</th><th>Rend.%</th><th>Lucro</th><th>Valor Atual</th></tr></thead>
                 <tbody>
-                    ${poolsHtml}
-                    <tr style="font-weight: bold; border-top: 2px solid var(--border-glass);">
-                        <td>Total</td>
+                    ${rows}
+                    <tr style="font-weight:bold;border-top:2px solid var(--border-glass);">
+                        <td colspan="3">Total da semana</td>
+                        <td style="color:var(--success);">+${fmt(weekProfit)}</td>
                         <td>-</td>
-                        <td style="color: var(--success);">+${formatCurrency(weekProfit)}</td>
-                        <td>${formatCurrency(weekTotal)}</td>
                     </tr>
                 </tbody>
-            </table>
-        `;
-
-        weeksContainer.appendChild(weekCard);
+            </table>`;
+        container.appendChild(weekCard);
     });
+
+    // Resumo do mês — busca AAVE do mesmo mês
+    const aaveMes = allAaveData.find(a => a.month === month) || null;
+    const weth    = parseFloat(aaveMes?.weth_value  || aaveMes?.aave_balance || 0);
+    const usdto   = parseFloat(aaveMes?.usdto_value || aaveMes?.borrow_value || 0);
+
+    let monthPoolsValue = 0;
+    Object.values(monthPositions).forEach(pos => {
+        monthPoolsValue += pos.current > 0 ? pos.current : pos.fallback;
+    });
+
+    const semPagar = weth - usdto + monthPoolsValue;
+    const pagando  = weth + monthPoolsValue;
+
+    const summary = document.createElement('div');
+    summary.className = 'glass-card';
+    summary.style.cssText = 'margin-top:24px;border:1px solid rgba(168,85,247,0.3);';
+    summary.innerHTML = `
+        <h3 style="margin-bottom:20px;color:var(--neon-purple,#a855f7);">📊 Resumo — ${month}</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:${weth > 0 ? '20px' : '0'};">
+            <div style="text-align:center;padding:12px;background:rgba(168,85,247,0.1);border-radius:12px;">
+                <p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Valor Atual Pools</p>
+                <p style="font-size:20px;font-weight:700;">${fmt(monthPoolsValue)}</p>
+            </div>
+            <div style="text-align:center;padding:12px;background:rgba(34,197,94,0.1);border-radius:12px;">
+                <p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Lucro Total</p>
+                <p style="font-size:20px;font-weight:700;color:#22c55e;">+${fmt(monthTotalProfit)}</p>
+            </div>
+        </div>
+        ${weth > 0 ? `
+        <div style="padding-top:16px;border-top:1px solid var(--border-glass);">
+            <h4 style="margin-bottom:12px;color:var(--text-secondary);">Total com AAVE (${month})</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="padding:14px;background:rgba(239,68,68,0.08);border-radius:12px;border:1px solid rgba(239,68,68,0.2);">
+                    <p style="color:var(--text-muted);font-size:12px;margin-bottom:6px;">SEM pagar empréstimo</p>
+                    <p style="font-size:22px;font-weight:700;">${fmt(semPagar)}</p>
+                    <p style="color:var(--text-muted);font-size:11px;margin-top:4px;">WETH(${fmt(weth)}) − Emprést.(${fmt(usdto)}) + Pools</p>
+                </div>
+                <div style="padding:14px;background:rgba(34,197,94,0.08);border-radius:12px;border:1px solid rgba(34,197,94,0.2);">
+                    <p style="color:var(--text-muted);font-size:12px;margin-bottom:6px;">PAGANDO empréstimo</p>
+                    <p style="font-size:22px;font-weight:700;">${fmt(pagando)}</p>
+                    <p style="color:var(--text-muted);font-size:11px;margin-top:4px;">WETH(${fmt(weth)}) + Pools</p>
+                </div>
+            </div>
+        </div>` : ''}`;
+    container.appendChild(summary);
+}
+
+function refreshWeeksView() {
+    if (currentMonth && document.getElementById('weeks-view')?.classList.contains('active')) {
+        renderWeeks(currentMonth);
+    }
 }
 
 function showMonths() {
+    currentMonth = null;
     document.getElementById('months-view').style.display = 'block';
     document.getElementById('weeks-view').classList.remove('active');
 }
 
 function showSection(section) {
-    document.querySelectorAll('.nav-tabs button').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.section === section);
-    });
-    document.querySelectorAll('.section').forEach(sec => {
-        sec.classList.toggle('active', sec.id === `${section}-section`);
-    });
+    document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.toggle('active', b.dataset.section === section));
+    document.querySelectorAll('.section').forEach(s => s.classList.toggle('active', s.id === `${section}-section`));
 }
 
-// Logout
 async function logout() {
     await supabaseClient.auth.signOut();
     localStorage.clear();

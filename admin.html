@@ -1,402 +1,219 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com https://cdn.jsdelivr.net;">
     <title>Admin Panel - S.I.L.T. System</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>.modal{max-height:85vh;overflow-y:auto;overflow-x:hidden;}.modal::-webkit-scrollbar{width:6px;}.modal::-webkit-scrollbar-thumb{background:var(--neon-purple,#a855f7);border-radius:3px;}</style>
 </head>
 <body>
-    <!-- Floating Particles Background -->
-    <div class="particles"></div>
+<div class="particles"></div><div class="header-trigger"></div>
+<header class="floating-header visible"><div class="header-content">
+    <a href="admin.html" class="logo"><span>◆</span> S.I.L.T. Admin</a>
+    <nav><ul class="nav-links"><li><a href="dashboard.html">Dashboard</a></li><li><a href="#" onclick="logout()">Sair</a></li></ul></nav>
+</div></header>
 
-    <!-- Header Trigger Zone -->
-    <div class="header-trigger"></div>
+<div class="dashboard">
+  <div class="dashboard-header">
+    <div><h1>Painel Administrativo</h1><p style="color:var(--text-secondary);">Gerencie usuários, pools, AAVE e ranking</p></div>
+    <div class="user-info"><div class="user-avatar" style="background:linear-gradient(135deg,#ef4444,#dc2626);" id="admin-avatar">A</div></div>
+  </div>
 
-    <!-- Floating Header -->
-    <header class="floating-header visible">
-        <div class="header-content">
-            <a href="admin.html" class="logo">
-                <span>◆</span> S.I.L.T. Admin
-            </a>
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="dashboard.html">Dashboard</a></li>
-                    <li><a href="#" onclick="logout()">Sair</a></li>
-                </ul>
-            </nav>
+  <div class="admin-grid">
+    <div class="admin-sidebar"><h3>Menu</h3><ul class="admin-menu">
+      <li><button class="active" onclick="showAdminSection('users')"   data-section="users"><span>👥</span> Usuários</button></li>
+      <li><button onclick="showAdminSection('pools')"   data-section="pools"><span>💰</span> Pools</button></li>
+      <li><button onclick="showAdminSection('aave')"    data-section="aave"><span>🏦</span> AAVE</button></li>
+      <li><button onclick="showAdminSection('ranking')" data-section="ranking"><span>🏆</span> Ranking</button></li>
+    </ul></div>
+
+    <div class="admin-content">
+
+      <!-- USUÁRIOS -->
+      <div id="admin-users" class="admin-section active">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
+          <h2>Gerenciar Usuários</h2><button class="neon-btn" onclick="openModal('create-user-modal')">+ Novo Usuário</button>
         </div>
-    </header>
+        <div class="data-table-container"><table class="data-table">
+          <thead><tr><th>Usuário</th><th>Email</th><th>Função</th><th>Criado em</th><th>Ações</th></tr></thead>
+          <tbody id="users-table-body"><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr></tbody>
+        </table></div>
+      </div>
 
-    <!-- Dashboard Container -->
-    <div class="dashboard">
-        <!-- Dashboard Header -->
-        <div class="dashboard-header">
-            <div>
-                <h1>Painel Administrativo</h1>
-                <p style="color: var(--text-secondary);">Gerencie usuários, pools e dados AAVE</p>
-            </div>
-
-            <div class="user-info">
-                <div class="user-avatar" style="background: linear-gradient(135deg, #ef4444, #dc2626);" id="admin-avatar">A</div>
-            </div>
+      <!-- POOLS -->
+      <div id="admin-pools" class="admin-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
+          <h2>Gerenciar Dados de Pools</h2><button class="neon-btn" onclick="openModal('add-pool-modal')">+ Adicionar Dados</button>
         </div>
-
-        <!-- Admin Grid -->
-        <div class="admin-grid">
-            <!-- Sidebar -->
-            <div class="admin-sidebar">
-                <h3>Menu</h3>
-                <ul class="admin-menu">
-                    <li>
-                        <button class="active" onclick="showAdminSection('users')" data-section="users">
-                            <span>👥</span> Usuários
-                        </button>
-                    </li>
-                    <li>
-                        <button onclick="showAdminSection('pools')" data-section="pools">
-                            <span>💰</span> Dados de Pools
-                        </button>
-                    </li>
-                    <li>
-                        <button onclick="showAdminSection('aave')" data-section="aave">
-                            <span>🏦</span> Dados AAVE
-                        </button>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Content -->
-            <div class="admin-content">
-                <!-- Users Section -->
-                <div id="admin-users" class="admin-section active">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
-                        <h2>Gerenciar Usuários</h2>
-                        <button class="neon-btn" onclick="openModal('create-user-modal')">
-                            + Novo Usuário
-                        </button>
-                    </div>
-
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Usuário</th>
-                                    <th>Email</th>
-                                    <th>Função</th>
-                                    <th>Criado em</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body">
-                                <tr><td colspan="5" style="text-align: center; color: var(--text-secondary);">Carregando...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Pools Section -->
-                <div id="admin-pools" class="admin-section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
-                        <h2>Gerenciar Dados de Pools</h2>
-                        <button class="neon-btn" onclick="openModal('add-pool-modal')">
-                            + Adicionar Dados
-                        </button>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label>Filtrar por Usuário</label>
-                        <select id="pool-user-filter" onchange="loadUserPools()">
-                            <option value="">Todos os usuários</option>
-                        </select>
-                    </div>
-
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Usuário</th>
-                                    <th>Mês</th>
-                                    <th>Semana</th>
-                                    <th>Pool</th>
-                                    <th>Investido</th>
-                                    <th>Lucro</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pools-table-body">
-                                <tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">Selecione um usuário</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- AAVE Section -->
-                <div id="admin-aave" class="admin-section">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
-                        <h2>Gerenciar Dados AAVE</h2>
-                        <button class="neon-btn" onclick="openModal('add-aave-modal')">
-                            + Atualizar Dados
-                        </button>
-                    </div>
-
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label>Selecionar Usuário</label>
-                        <select id="aave-user-filter" onchange="loadUserAave()">
-                            <option value="">Selecione um usuário...</option>
-                        </select>
-                    </div>
-
-                    <div id="aave-data-display" style="display: none;">
-                        <div class="aave-cards" style="margin-bottom: 24px;">
-                            <div class="glass-card aave-card">
-                                <div class="aave-icon">🏦</div>
-                                <h3>Saldo AAVE</h3>
-                                <div class="aave-value" id="admin-aave-balance">$0.00</div>
-                            </div>
-
-                            <div class="glass-card aave-card">
-                                <div class="aave-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">💳</div>
-                                <h3>Valor Emprestado</h3>
-                                <div class="aave-value" id="admin-borrow-value">$0.00</div>
-                            </div>
-
-                            <div class="glass-card aave-card">
-                                <div class="aave-icon" style="background: linear-gradient(135deg, #22c55e, #16a34a);">📈</div>
-                                <h3>Patrimônio Líquido</h3>
-                                <div class="aave-value" id="admin-net-value">$0.00</div>
-                            </div>
-                        </div>
-
-                        <div class="glass-card" style="margin-top: 24px;">
-                            <h3 style="margin-bottom: 16px;">Histórico de Atualizações</h3>
-                            <p style="color: var(--text-secondary);">Última atualização: <span id="aave-last-updated">-</span></p>
-                        </div>
-                    </div>
-
-                    <p id="aave-no-data" style="text-align: center; color: var(--text-secondary); padding: 40px; display: none;">
-                        Nenhum dado AAVE encontrado para este usuário.
-                    </p>
-                </div>
-            </div>
+        <div class="form-group" style="margin-bottom:20px;"><label>Filtrar por Usuário</label>
+          <select id="pool-user-filter" onchange="loadUserPools()"><option value="">Todos os usuários</option></select>
         </div>
-    </div>
+        <div class="data-table-container"><table class="data-table">
+          <thead><tr><th>Usuário</th><th>Mês</th><th>Semana</th><th>Pool</th><th>Inicial</th><th>Rend.%</th><th>Aporte</th><th>Lucro</th><th>Valor Atual</th><th>Ações</th></tr></thead>
+          <tbody id="pools-table-body"><tr><td colspan="10" style="text-align:center;color:var(--text-secondary);">Selecione um usuário</td></tr></tbody>
+        </table></div>
+      </div>
 
-    <!-- Create User Modal -->
-    <div class="modal-overlay" id="create-user-modal">
-        <div class="modal">
-            <h3>Criar Novo Usuário</h3>
-            <form id="create-user-form">
-                <div class="form-group">
-                    <label>Nome de Usuário *</label>
-                    <input type="text" id="new-username" required placeholder="Digite o nome de usuário">
-                </div>
-                <div class="form-group">
-                    <label>Email *</label>
-                    <input type="email" id="new-email" required placeholder="Digite o email">
-                </div>
-                <div class="form-group">
-                    <label>Senha *</label>
-                    <input type="password" id="new-password" required placeholder="Digite a senha" minlength="6">
-                </div>
-                <div class="form-group">
-                    <label>Função *</label>
-                    <select id="new-role" required>
-                        <option value="user">Usuário</option>
-                        <option value="admin">Administrador</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="outline-btn" onclick="closeModal('create-user-modal')">Cancelar</button>
-                    <button type="submit" class="neon-btn" id="create-user-btn">Criar</button>
-                </div>
-            </form>
+      <!-- AAVE -->
+      <div id="admin-aave" class="admin-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
+          <h2>Gerenciar Dados AAVE</h2><button class="neon-btn" onclick="openModal('add-aave-modal')">+ Atualizar Dados</button>
         </div>
-    </div>
-
-    <!-- Edit User Modal -->
-    <div class="modal-overlay" id="edit-user-modal">
-        <div class="modal">
-            <h3>Editar Usuário</h3>
-            <form id="edit-user-form">
-                <input type="hidden" id="edit-user-id">
-                <div class="form-group">
-                    <label>Nome de Usuário</label>
-                    <input type="text" id="edit-username" readonly style="background: rgba(255,255,255,0.05); color: var(--text-muted);">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="edit-email" readonly style="background: rgba(255,255,255,0.05); color: var(--text-muted);">
-                </div>
-                <div class="form-group">
-                    <label>Função *</label>
-                    <select id="edit-role" required>
-                        <option value="user">Usuário</option>
-                        <option value="admin">Administrador</option>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="outline-btn" onclick="closeModal('edit-user-modal')">Cancelar</button>
-                    <button type="submit" class="neon-btn">Salvar</button>
-                </div>
-            </form>
+        <div class="form-group" style="margin-bottom:20px;"><label>Selecionar Usuário</label>
+          <select id="aave-user-filter" onchange="loadUserAave()"><option value="">Selecione um usuário...</option></select>
         </div>
-    </div>
-
-    <!-- Add Pool Data Modal -->
-    <div class="modal-overlay" id="add-pool-modal">
-        <div class="modal">
-            <h3>Adicionar Dados de Pool</h3>
-            <form id="add-pool-form">
-                <div class="form-group">
-                    <label>Usuário *</label>
-                    <select id="pool-user" required>
-                        <option value="">Selecione...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Mês *</label>
-                    <select id="pool-month" required>
-                        <option value="Janeiro">Janeiro</option>
-                        <option value="Fevereiro">Fevereiro</option>
-                        <option value="Março">Março</option>
-                        <option value="Abril">Abril</option>
-                        <option value="Maio">Maio</option>
-                        <option value="Junho">Junho</option>
-                        <option value="Julho">Julho</option>
-                        <option value="Agosto">Agosto</option>
-                        <option value="Setembro">Setembro</option>
-                        <option value="Outubro">Outubro</option>
-                        <option value="Novembro">Novembro</option>
-                        <option value="Dezembro">Dezembro</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Semana *</label>
-                    <select id="pool-week" required>
-                        <option value="Week 1">Semana 1</option>
-                        <option value="Week 2">Semana 2</option>
-                        <option value="Week 3">Semana 3</option>
-                        <option value="Week 4">Semana 4</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Pool *</label>
-                    <select id="pool-name" required>
-                        <option value="CES/USDT">CES/USDT</option>
-                        <option value="DAI/sLGNS">DAI/sLGNS</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Valor Investido (USD) *</label>
-                    <input type="number" id="pool-invested" step="0.01" min="0" required placeholder="0.00">
-                </div>
-                <div class="form-group">
-                    <label>Valor do Lucro (USD) *</label>
-                    <input type="number" id="pool-profit" step="0.01" min="0" required placeholder="0.00">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="outline-btn" onclick="closeModal('add-pool-modal')">Cancelar</button>
-                    <button type="submit" class="neon-btn">Adicionar</button>
-                </div>
-            </form>
+        <div id="aave-data-display" style="display:none;">
+          <div class="aave-cards" style="margin-bottom:24px;">
+            <div class="glass-card aave-card"><div class="aave-icon">🏦</div><h3>WETH</h3><div class="aave-value" id="admin-aave-balance">$0.00</div></div>
+            <div class="glass-card aave-card"><div class="aave-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626);">💳</div><h3>USDTO (Empréstimo)</h3><div class="aave-value" id="admin-borrow-value">$0.00</div></div>
+            <div class="glass-card aave-card"><div class="aave-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);">📈</div><h3>Patrimônio Líquido</h3><div class="aave-value" id="admin-net-value">$0.00</div></div>
+          </div>
+          <div class="glass-card" style="padding:20px;"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+            <div><p style="color:var(--text-muted);font-size:13px;">WETH</p><p id="admin-weth-value" style="font-size:18px;font-weight:600;">$0.00</p></div>
+            <div><p style="color:var(--text-muted);font-size:13px;">USDTO</p><p id="admin-usdto-value" style="font-size:18px;font-weight:600;">$0.00</p></div>
+            <div><p style="color:var(--text-muted);font-size:13px;">Redução Empréstimo</p><p id="admin-loan-reduction" style="font-size:18px;font-weight:600;color:#22c55e;">$0.00</p></div>
+          </div></div>
+          <div class="glass-card" style="margin-top:16px;"><h3 style="margin-bottom:12px;">Última atualização</h3><p style="color:var(--text-secondary);"><span id="aave-last-updated">-</span></p></div>
         </div>
-    </div>
+        <p id="aave-no-data" style="text-align:center;color:var(--text-secondary);padding:40px;display:none;">Nenhum dado AAVE encontrado.</p>
+      </div>
 
-    <!-- Edit Pool Modal -->
-    <div class="modal-overlay" id="edit-pool-modal">
-        <div class="modal">
-            <h3>Editar Dados de Pool</h3>
-            <form id="edit-pool-form">
-                <input type="hidden" id="edit-pool-id">
-                <div class="form-group">
-                    <label>Mês</label>
-                    <select id="edit-pool-month" required>
-                        <option value="Janeiro">Janeiro</option>
-                        <option value="Fevereiro">Fevereiro</option>
-                        <option value="Março">Março</option>
-                        <option value="Abril">Abril</option>
-                        <option value="Maio">Maio</option>
-                        <option value="Junho">Junho</option>
-                        <option value="Julho">Julho</option>
-                        <option value="Agosto">Agosto</option>
-                        <option value="Setembro">Setembro</option>
-                        <option value="Outubro">Outubro</option>
-                        <option value="Novembro">Novembro</option>
-                        <option value="Dezembro">Dezembro</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Semana</label>
-                    <select id="edit-pool-week" required>
-                        <option value="Week 1">Semana 1</option>
-                        <option value="Week 2">Semana 2</option>
-                        <option value="Week 3">Semana 3</option>
-                        <option value="Week 4">Semana 4</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Pool</label>
-                    <select id="edit-pool-name" required>
-                        <option value="CES/USDT">CES/USDT</option>
-                        <option value="DAI/sLGNS">DAI/sLGNS</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Valor Investido (USD)</label>
-                    <input type="number" id="edit-pool-invested" step="0.01" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label>Valor do Lucro (USD)</label>
-                    <input type="number" id="edit-pool-profit" step="0.01" min="0" required>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="outline-btn" onclick="closeModal('edit-pool-modal')">Cancelar</button>
-                    <button type="submit" class="neon-btn">Salvar</button>
-                </div>
-            </form>
+      <!-- RANKING -->
+      <div id="admin-ranking" class="admin-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:16px;">
+          <h2>Gerenciar Ranking</h2>
+          <button class="neon-btn" onclick="openModal('add-ranking-modal')">+ Lançar Semana</button>
         </div>
-    </div>
-
-    <!-- Add AAVE Data Modal -->
-    <div class="modal-overlay" id="add-aave-modal">
-        <div class="modal">
-            <h3>Atualizar Dados AAVE</h3>
-            <form id="add-aave-form">
-                <div class="form-group">
-                    <label>Usuário *</label>
-                    <select id="aave-user" required>
-                        <option value="">Selecione...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Saldo AAVE (USD) *</label>
-                    <input type="number" id="aave-balance-input" step="0.01" min="0" required placeholder="0.00">
-                </div>
-                <div class="form-group">
-                    <label>Valor Emprestado (USD) *</label>
-                    <input type="number" id="aave-borrow-input" step="0.01" min="0" required placeholder="0.00">
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="outline-btn" onclick="closeModal('add-aave-modal')">Cancelar</button>
-                    <button type="submit" class="neon-btn">Salvar</button>
-                </div>
-            </form>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">
+          Lance o valor de cada membro por semana. O ranking público exibe automaticamente a semana mais recente.
+        </p>
+        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+          <div class="form-group" style="margin:0;flex:1;min-width:160px;"><label>Filtrar por Mês</label>
+            <select id="ranking-month-filter" onchange="loadRankingAdmin()">
+              <option value="">Todos</option>
+              <option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option>
+              <option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option>
+              <option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin:0;flex:1;min-width:160px;"><label>Filtrar por Semana</label>
+            <select id="ranking-week-filter" onchange="loadRankingAdmin()">
+              <option value="">Todas</option>
+              <option>Semana 1</option><option>Semana 2</option><option>Semana 3</option>
+              <option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option>
+            </select>
+          </div>
         </div>
-    </div>
+        <div class="data-table-container"><table class="data-table">
+          <thead><tr><th>Mês</th><th>Semana</th><th>Membro</th><th>Valor (USD)</th><th>Ações</th></tr></thead>
+          <tbody id="ranking-table-body"><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr></tbody>
+        </table></div>
+      </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container"></div>
+    </div><!-- /admin-content -->
+  </div><!-- /admin-grid -->
+</div><!-- /dashboard -->
 
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loading" style="display: none;">
-        <div class="spinner"></div>
-        <p>Processando...</p>
-    </div>
+<!-- MODAIS -->
 
-    <!-- Supabase Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/admin.js"></script>
-</body>
-</html>
+<!-- Criar Usuário -->
+<div class="modal-overlay" id="create-user-modal"><div class="modal"><h3>Criar Novo Usuário</h3>
+  <form id="create-user-form">
+    <div class="form-group"><label>Usuário *</label><input type="text" id="new-username" required placeholder="Nome de usuário"></div>
+    <div class="form-group"><label>Email *</label><input type="email" id="new-email" required placeholder="Email"></div>
+    <div class="form-group"><label>Senha *</label><input type="password" id="new-password" required placeholder="Senha" minlength="6"></div>
+    <div class="form-group"><label>Função *</label><select id="new-role" required><option value="user">Usuário</option><option value="admin">Administrador</option></select></div>
+    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('create-user-modal')">Cancelar</button><button type="submit" class="neon-btn">Criar</button></div>
+  </form>
+</div></div>
+
+<!-- Editar Usuário -->
+<div class="modal-overlay" id="edit-user-modal"><div class="modal"><h3>Editar Usuário</h3>
+  <form id="edit-user-form">
+    <input type="hidden" id="edit-user-id">
+    <div class="form-group"><label>Usuário</label><input type="text" id="edit-username" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
+    <div class="form-group"><label>Email</label><input type="email" id="edit-email" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
+    <div class="form-group"><label>Função *</label><select id="edit-role" required><option value="user">Usuário</option><option value="admin">Administrador</option></select></div>
+    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('edit-user-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
+  </form>
+</div></div>
+
+<!-- Adicionar Pool -->
+<div class="modal-overlay" id="add-pool-modal"><div class="modal"><h3>Adicionar Dados de Pool</h3>
+  <form id="add-pool-form">
+    <div class="form-group"><label>Usuário *</label><select id="pool-user" required><option value="">Selecione...</option></select></div>
+    <div class="form-group"><label>Mês *</label><select id="pool-month" required><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
+    <div class="form-group"><label>Semana *</label><select id="pool-week" required><option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option></select></div>
+    <div class="form-group"><label>Pool *</label><input type="text" id="pool-name" required placeholder="Ex: A/DAI, WETH/USDT..."></div>
+    <div class="form-group"><label>Valor Inicial (USD)</label><input type="number" id="pool-initial" step="0.01" min="0" placeholder="Ex: 266.00"></div>
+    <div class="form-group"><label>Rendimento (%)</label><input type="number" id="pool-yield" step="0.01" placeholder="Ex: 2.50"></div>
+    <div class="form-group"><label>Aporte Adicional (USD)</label><input type="number" id="pool-contribution" step="0.01" min="0" placeholder="Ex: 0.00"></div>
+    <div class="form-group"><label>Lucro da Semana (USD)</label><input type="number" id="pool-profit" step="0.01" placeholder="Ex: 14.55"></div>
+    <div class="form-group"><label>Valor Atual da Pool (USD)</label><input type="number" id="pool-current" step="0.01" min="0" placeholder="Ex: 272.00"></div>
+    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('add-pool-modal')">Cancelar</button><button type="submit" class="neon-btn">Adicionar</button></div>
+  </form>
+</div></div>
+
+<!-- Editar Pool -->
+<div class="modal-overlay" id="edit-pool-modal"><div class="modal"><h3>Editar Pool</h3>
+  <form id="edit-pool-form">
+    <input type="hidden" id="edit-pool-id">
+    <div class="form-group"><label>Mês *</label><select id="edit-pool-month" required><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
+    <div class="form-group"><label>Semana *</label><select id="edit-pool-week" required><option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option></select></div>
+    <div class="form-group"><label>Pool *</label><input type="text" id="edit-pool-name" required></div>
+    <div class="form-group"><label>Valor Inicial (USD)</label><input type="number" id="edit-pool-initial" step="0.01" min="0"></div>
+    <div class="form-group"><label>Rendimento (%)</label><input type="number" id="edit-pool-yield" step="0.01"></div>
+    <div class="form-group"><label>Aporte Adicional (USD)</label><input type="number" id="edit-pool-contribution" step="0.01" min="0"></div>
+    <div class="form-group"><label>Lucro da Semana (USD)</label><input type="number" id="edit-pool-profit" step="0.01"></div>
+    <div class="form-group"><label>Valor Atual da Pool (USD)</label><input type="number" id="edit-pool-current" step="0.01" min="0"></div>
+    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('edit-pool-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
+  </form>
+</div></div>
+
+<!-- AAVE -->
+<div class="modal-overlay" id="add-aave-modal"><div class="modal"><h3>Atualizar Dados AAVE</h3>
+  <form id="add-aave-form">
+    <div class="form-group"><label>Usuário *</label><select id="aave-user" required><option value="">Selecione...</option></select></div>
+    <div class="form-group"><label>Mês *</label><select id="aave-month" required><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
+    <hr style="border-color:var(--border-glass);margin:8px 0;">
+    <div class="form-group"><label>WETH (USD) *</label><input type="number" id="aave-weth" step="0.01" min="0" required placeholder="Ex: 219.43"></div>
+    <div class="form-group"><label>USDTO — Empréstimo (USD) *</label><input type="number" id="aave-usdto" step="0.01" min="0" required placeholder="Ex: 73.15"></div>
+    <div class="form-group"><label>Redução do Empréstimo (USD)</label><input type="number" id="aave-loan-reduction" step="0.01" min="0" placeholder="Ex: 0.00"></div>
+    <hr style="border-color:var(--border-glass);margin:8px 0;">
+    <div class="form-group"><label>Valor Emprestado Total (USD) *</label><input type="number" id="aave-borrow-input" step="0.01" min="0" required placeholder="Ex: 73.15"></div>
+    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('add-aave-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
+  </form>
+</div></div>
+
+<!-- Lançar Ranking -->
+<div class="modal-overlay" id="add-ranking-modal"><div class="modal"><h3>🏆 Lançar Ranking da Semana</h3>
+  <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Insira o valor do membro para a semana. A vela é proporcional ao valor lançado — sem mostrar números.</p>
+  <form id="add-ranking-form">
+    <div class="form-group"><label>Mês *</label><select id="ranking-month" required><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
+    <div class="form-group"><label>Semana *</label><select id="ranking-week" required><option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option></select></div>
+    <div class="form-group"><label>Nome do Membro *</label><input type="text" id="ranking-username" required placeholder="Ex: Matheus"></div>
+    <div class="form-group"><label>Valor (USD) *</label><input type="number" id="ranking-value" step="0.01" min="0" required placeholder="Ex: 478.43"></div>
+    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('add-ranking-modal')">Cancelar</button><button type="submit" class="neon-btn">Lançar</button></div>
+  </form>
+</div></div>
+
+<!-- Editar Ranking -->
+<div class="modal-overlay" id="edit-ranking-modal"><div class="modal"><h3>Editar Ranking</h3>
+  <form id="edit-ranking-form">
+    <input type="hidden" id="edit-ranking-id">
+    <div class="form-group"><label>Mês</label><input type="text" id="edit-ranking-month" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
+    <div class="form-group"><label>Semana</label><input type="text" id="edit-ranking-week" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
+    <div class="form-group"><label>Membro</label><input type="text" id="edit-ranking-username" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
+    <div class="form-group"><label>Valor (USD) *</label><input type="number" id="edit-ranking-value" step="0.01" min="0" required></div>
+    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('edit-ranking-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
+  </form>
+</div></div>
+
+<div class="toast-container"></div>
+<div class="loading-overlay" id="loading" style="display:none;"><div class="spinner"></div><p>Processando...</p></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/admin.js"></script>
+</body></html>

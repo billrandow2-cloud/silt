@@ -1179,3 +1179,28 @@ body::before {
     background: rgba(168, 85, 247, 0.3);
     color: var(--text-primary);
 }
+/* Modal com scroll quando muito alto */
+.modal {
+    max-height: 85vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Estilizar a scrollbar para combinar com o tema */
+.modal::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.modal::-webkit-scrollbar-thumb {
+    background: var(--neon-purple);
+    border-radius: 3px;
+}
+
+.modal::-webkit-scrollbar-thumb:hover {
+    background: var(--neon-purple-light, #c084fc);
+}

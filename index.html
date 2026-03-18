@@ -3,120 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://cdn.jsdelivr.net;">
     <title>S.I.L.T. System - Bem-vindo</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- Floating Particles Background -->
     <div class="particles"></div>
-
-    <!-- Header Trigger Zone -->
     <div class="header-trigger"></div>
-
-    <!-- Floating Header -->
     <header class="floating-header">
         <div class="header-content">
-            <a href="index.html" class="logo">
-                <span>◆</span> S.I.L.T.
-            </a>
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="login.html">Login</a></li>
-                    <li><a href="#sobre">Sobre</a></li>
-                </ul>
-            </nav>
+            <a href="index.html" class="logo"><span>◆</span> S.I.L.T.</a>
+            <nav><ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="#ranking">Ranking</a></li>
+                <li><a href="login.html">Login</a></li>
+                <li><a href="#sobre">Sobre</a></li>
+            </ul></nav>
         </div>
     </header>
 
-    <!-- Hero Section -->
     <section class="hero">
-        <div class="hero-content" style="width: 100%; max-width: 900px; margin: 0 auto; padding: 0 20px;">
-            <h1 class="hero-title" style="text-align: center; margin-bottom: 30px;">
-                <span class="gradient-text" id="main-title" style="display: block; animation: fadeInDown 1s ease;">BEM VINDO AO SISTEMA S.I.L.T.</span>
+        <div class="hero-content" style="width:100%;max-width:900px;margin:0 auto;padding:0 20px;">
+            <h1 class="hero-title" style="text-align:center;margin-bottom:30px;">
+                <span class="gradient-text" style="display:block;animation:fadeInDown 1s ease;">BEM VINDO AO SISTEMA S.I.L.T.</span>
             </h1>
-            <p class="hero-subtitle" id="sub-title" style="text-align: center; opacity: 0; animation: fadeInUp 1s ease 0.8s forwards;">Aqui começa o seu futuro fora da corrida dos ratos</p>
-
-            <div style="margin-top: 48px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+            <p class="hero-subtitle" style="text-align:center;opacity:0;animation:fadeInUp 1s ease 0.8s forwards;">Aqui começa o seu futuro fora da corrida dos ratos</p>
+            <div style="margin-top:48px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
                 <a href="login.html" class="neon-btn">Acessar Dashboard</a>
-                <a href="#sobre" class="neon-btn secondary">Saiba Mais</a>
+                <a href="#ranking" class="neon-btn secondary">Ver Ranking</a>
             </div>
         </div>
-
-        <!-- Scroll indicator -->
-        <div style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); opacity: 0.5; animation: bounce 2s infinite;">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--neon-purple);">
+        <div style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);opacity:0.5;animation:bounce 2s infinite;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--neon-purple);">
                 <path d="M12 5v14M19 12l-7 7-7-7"/>
             </svg>
         </div>
     </section>
 
-    <!-- Features Section -->
-    <section id="sobre" style="padding: 100px 24px; max-width: 1200px; margin: 0 auto;">
-        <h2 style="text-align: center; font-size: 36px; margin-bottom: 16px;">
-            <span class="gradient-text">O Sistema S.I.L.T.</span>
+    <!-- RANKING -->
+    <section id="ranking" style="padding:100px 24px;max-width:1100px;margin:0 auto;">
+        <h2 style="text-align:center;font-size:36px;margin-bottom:12px;">
+            <span class="gradient-text">🏆 Ranking</span>
         </h2>
-        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 64px; max-width: 600px; margin-left: auto; margin-right: auto;">
-            Uma plataforma completa para gestão de investimentos em pools e AAVE, com visualização de dados em tempo real e análise de performance.
-        </p>
+        <p style="text-align:center;color:var(--text-secondary);margin-bottom:6px;">Quem tem a vela maior é o líder</p>
+        <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:48px;flex-wrap:wrap;">
+            <span id="ranking-month-label" style="color:var(--neon-purple,#a855f7);font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1px;"></span>
+            <span style="color:var(--border-glass);">•</span>
+            <span id="ranking-week-label"  style="color:var(--text-secondary);font-size:14px;font-weight:500;"></span>
+        </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
-            <div class="glass-card" style="text-align: center;">
-                <div style="width: 64px; height: 64px; margin: 0 auto 20px; background: rgba(168, 85, 247, 0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
-                    📊
+        <div class="glass-card" style="padding:32px;min-height:440px;display:flex;align-items:flex-end;justify-content:center;">
+            <div id="ranking-chart" style="width:100%;">
+                <div style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-muted);">
+                    <div class="spinner" style="width:32px;height:32px;margin-right:12px;"></div>
+                    Carregando ranking...
                 </div>
-                <h3 style="margin-bottom: 12px;">Dashboard Completo</h3>
-                <p style="color: var(--text-secondary);">Visualize seu portfólio completo com gráficos interativos e análise detalhada de performance.</p>
             </div>
+        </div>
 
-            <div class="glass-card" style="text-align: center;">
-                <div style="width: 64px; height: 64px; margin: 0 auto 20px; background: rgba(34, 197, 94, 0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
-                    💰
-                </div>
-                <h3 style="margin-bottom: 12px;">Gestão de Pools</h3>
-                <p style="color: var(--text-secondary);">Acompanhe seus investimentos em pools como CES/USDT e DAI/sLGNS com dados semanais detalhados.</p>
-            </div>
-
-            <div class="glass-card" style="text-align: center;">
-                <div style="width: 64px; height: 64px; margin: 0 auto 20px; background: rgba(59, 130, 246, 0.2); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 28px;">
-                    🏦
-                </div>
-                <h3 style="margin-bottom: 12px;">Integração AAVE</h3>
-                <p style="color: var(--text-secondary);">Monitore seu saldo AAVE e valores de empréstimo em tempo real.</p>
-            </div>
+        <div style="display:flex;justify-content:center;gap:24px;margin-top:24px;flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px;"><span style="display:inline-block;width:16px;height:16px;background:linear-gradient(180deg,#fbbf24,#f59e0b);border-radius:3px;"></span> 1º lugar</span>
+            <span style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px;"><span style="display:inline-block;width:16px;height:16px;background:linear-gradient(180deg,#94a3b8,#64748b);border-radius:3px;"></span> 2º lugar</span>
+            <span style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px;"><span style="display:inline-block;width:16px;height:16px;background:linear-gradient(180deg,#c2844a,#a0522d);border-radius:3px;"></span> 3º lugar</span>
+            <span style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px;"><span style="display:inline-block;width:16px;height:16px;background:linear-gradient(180deg,#a855f7,#7c3aed);border-radius:3px;"></span> Demais</span>
         </div>
     </section>
 
-    <!-- CTA Section -->
-    <section style="padding: 80px 24px; text-align: center;">
-        <div class="glass-card" style="max-width: 600px; margin: 0 auto;">
-            <h2 style="font-size: 28px; margin-bottom: 16px;">Pronto para começar?</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 32px;">
-                Faça login agora e tenha acesso completo ao seu dashboard financeiro.
-            </p>
-            <a href="login.html" class="neon-btn" style="display: inline-block;">Entrar no Sistema</a>
+    <section id="sobre" style="padding:100px 24px;max-width:1200px;margin:0 auto;">
+        <h2 style="text-align:center;font-size:36px;margin-bottom:16px;"><span class="gradient-text">O Sistema S.I.L.T.</span></h2>
+        <p style="text-align:center;color:var(--text-secondary);margin-bottom:64px;max-width:600px;margin-left:auto;margin-right:auto;">
+            Uma plataforma completa para gestão de investimentos em pools e AAVE, com visualização de dados em tempo real.
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;">
+            <div class="glass-card" style="text-align:center;"><div style="width:64px;height:64px;margin:0 auto 20px;background:rgba(168,85,247,0.2);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;">📊</div><h3 style="margin-bottom:12px;">Dashboard Completo</h3><p style="color:var(--text-secondary);">Visualize seu portfólio com gráficos e análise detalhada.</p></div>
+            <div class="glass-card" style="text-align:center;"><div style="width:64px;height:64px;margin:0 auto 20px;background:rgba(34,197,94,0.2);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;">💰</div><h3 style="margin-bottom:12px;">Gestão de Pools</h3><p style="color:var(--text-secondary);">Acompanhe seus investimentos com dados semanais detalhados.</p></div>
+            <div class="glass-card" style="text-align:center;"><div style="width:64px;height:64px;margin:0 auto 20px;background:rgba(59,130,246,0.2);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;">🏦</div><h3 style="margin-bottom:12px;">Integração AAVE</h3><p style="color:var(--text-secondary);">Monitore saldo AAVE e empréstimos em tempo real.</p></div>
         </div>
     </section>
 
-    <!-- Footer -->
-    <footer style="padding: 40px 24px; text-align: center; border-top: 1px solid var(--border-glass); margin-top: 60px;">
-        <p style="color: var(--text-muted); font-size: 14px;">
-            © 2025 S.I.L.T. System. Todos os direitos reservados.
-        </p>
+    <section style="padding:80px 24px;text-align:center;">
+        <div class="glass-card" style="max-width:600px;margin:0 auto;">
+            <h2 style="font-size:28px;margin-bottom:16px;">Pronto para começar?</h2>
+            <p style="color:var(--text-secondary);margin-bottom:32px;">Faça login e acesse seu dashboard financeiro.</p>
+            <a href="login.html" class="neon-btn" style="display:inline-block;">Entrar no Sistema</a>
+        </div>
+    </section>
+
+    <footer style="padding:40px 24px;text-align:center;border-top:1px solid var(--border-glass);margin-top:60px;">
+        <p style="color:var(--text-muted);font-size:14px;">© 2025 S.I.L.T. System. Todos os direitos reservados.</p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/ranking.js"></script>
     <script>
-        // Add bounce animation for scroll indicator
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes bounce {
-                0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
-                40% { transform: translateX(-50%) translateY(-10px); }
-                60% { transform: translateX(-50%) translateY(-5px); }
-            }
+        const s = document.createElement('style');
+        s.textContent = `
+            @keyframes bounce{0%,20%,50%,80%,100%{transform:translateX(-50%) translateY(0);}40%{transform:translateX(-50%) translateY(-10px);}60%{transform:translateX(-50%) translateY(-5px);}}
+            @keyframes fadeInDown{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
+            @keyframes fadeInUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
         `;
-        document.head.appendChild(style);
+        document.head.appendChild(s);
     </script>
 </body>
 </html>
