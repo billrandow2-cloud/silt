@@ -11,7 +11,7 @@
 <div class="particles"></div><div class="header-trigger"></div>
 <header class="floating-header visible"><div class="header-content">
     <a href="admin.html" class="logo"><span>◆</span> S.I.L.T. Admin</a>
-    <nav><ul class="nav-links"><li><a href="dashboard.html">Dashboard</a></li><li><a href="#" onclick="logout()">Sair</a></li></ul></nav>
+    <nav><ul class="nav-links"><li><a href="index.html">Home</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="#" onclick="logout()">Sair</a></li></ul></nav>
 </div></header>
 
 <div class="dashboard">
@@ -41,27 +41,44 @@
         </table></div>
       </div>
 
-      <!-- POOLS -->
+      <!-- POOLS — filtros melhorados -->
       <div id="admin-pools" class="admin-section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
           <h2>Gerenciar Dados de Pools</h2><button class="neon-btn" onclick="openModal('add-pool-modal')">+ Adicionar Dados</button>
         </div>
-        <div class="form-group" style="margin-bottom:20px;"><label>Filtrar por Usuário</label>
-          <select id="pool-user-filter" onchange="loadUserPools()"><option value="">Todos os usuários</option></select>
+        <!-- Filtros em grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+          <div class="form-group" style="margin:0;"><label style="font-size:12px;">Usuário</label>
+            <select id="pool-user-filter" onchange="loadUserPools()"><option value="">Todos</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label style="font-size:12px;">Mês</label>
+            <select id="pool-month-filter" onchange="loadUserPools()"><option value="">Todos</option><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label style="font-size:12px;">Semana</label>
+            <select id="pool-week-filter" onchange="loadUserPools()"><option value="">Todas</option><option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option></select>
+          </div>
+          <div style="display:flex;align-items:flex-end;padding-bottom:2px;">
+            <button onclick="clearPoolFilters()" class="outline-btn" style="font-size:12px;padding:8px 14px;width:100%;">✕ Limpar</button>
+          </div>
         </div>
         <div class="data-table-container"><table class="data-table">
           <thead><tr><th>Usuário</th><th>Mês</th><th>Semana</th><th>Pool</th><th>Inicial</th><th>Rend.%</th><th>Aporte</th><th>Lucro</th><th>Valor Atual</th><th>Ações</th></tr></thead>
-          <tbody id="pools-table-body"><tr><td colspan="10" style="text-align:center;color:var(--text-secondary);">Selecione um usuário</td></tr></tbody>
+          <tbody id="pools-table-body"><tr><td colspan="10" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr></tbody>
         </table></div>
       </div>
 
-      <!-- AAVE -->
+      <!-- AAVE — filtros por usuário e mês -->
       <div id="admin-aave" class="admin-section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
           <h2>Gerenciar Dados AAVE</h2><button class="neon-btn" onclick="openModal('add-aave-modal')">+ Atualizar Dados</button>
         </div>
-        <div class="form-group" style="margin-bottom:20px;"><label>Selecionar Usuário</label>
-          <select id="aave-user-filter" onchange="loadUserAave()"><option value="">Selecione um usuário...</option></select>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
+          <div class="form-group" style="margin:0;"><label style="font-size:12px;">Usuário</label>
+            <select id="aave-user-filter" onchange="loadUserAave()"><option value="">Selecione...</option></select>
+          </div>
+          <div class="form-group" style="margin:0;"><label style="font-size:12px;">Mês</label>
+            <select id="aave-month-filter-admin" onchange="loadUserAave()"><option value="">Mais recente</option><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select>
+          </div>
         </div>
         <div id="aave-data-display" style="display:none;">
           <div class="aave-cards" style="margin-bottom:24px;">
@@ -69,40 +86,28 @@
             <div class="glass-card aave-card"><div class="aave-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626);">💳</div><h3>USDTO (Empréstimo)</h3><div class="aave-value" id="admin-borrow-value">$0.00</div></div>
             <div class="glass-card aave-card"><div class="aave-icon" style="background:linear-gradient(135deg,#22c55e,#16a34a);">📈</div><h3>Patrimônio Líquido</h3><div class="aave-value" id="admin-net-value">$0.00</div></div>
           </div>
-          <div class="glass-card" style="padding:20px;"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+          <div class="glass-card" style="padding:20px;margin-bottom:16px;"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
             <div><p style="color:var(--text-muted);font-size:13px;">WETH</p><p id="admin-weth-value" style="font-size:18px;font-weight:600;">$0.00</p></div>
             <div><p style="color:var(--text-muted);font-size:13px;">USDTO</p><p id="admin-usdto-value" style="font-size:18px;font-weight:600;">$0.00</p></div>
             <div><p style="color:var(--text-muted);font-size:13px;">Redução Empréstimo</p><p id="admin-loan-reduction" style="font-size:18px;font-weight:600;color:#22c55e;">$0.00</p></div>
           </div></div>
-          <div class="glass-card" style="margin-top:16px;"><h3 style="margin-bottom:12px;">Última atualização</h3><p style="color:var(--text-secondary);"><span id="aave-last-updated">-</span></p></div>
+          <div class="glass-card" style="padding:16px;"><p style="color:var(--text-secondary);font-size:13px;">Última atualização: <span id="aave-last-updated">-</span></p></div>
         </div>
-        <p id="aave-no-data" style="text-align:center;color:var(--text-secondary);padding:40px;display:none;">Nenhum dado AAVE encontrado.</p>
+        <p id="aave-no-data" style="text-align:center;color:var(--text-secondary);padding:40px;display:none;">Selecione um usuário.</p>
       </div>
 
       <!-- RANKING -->
       <div id="admin-ranking" class="admin-section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:16px;">
-          <h2>Gerenciar Ranking</h2>
-          <button class="neon-btn" onclick="openModal('add-ranking-modal')">+ Lançar Semana</button>
+          <h2>Gerenciar Ranking</h2><button class="neon-btn" onclick="openModal('add-ranking-modal')">+ Lançar Semana</button>
         </div>
-        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">
-          Lance o valor de cada membro por semana. O ranking público exibe automaticamente a semana mais recente.
-        </p>
-        <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-          <div class="form-group" style="margin:0;flex:1;min-width:160px;"><label>Filtrar por Mês</label>
-            <select id="ranking-month-filter" onchange="loadRankingAdmin()">
-              <option value="">Todos</option>
-              <option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option>
-              <option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option>
-              <option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option>
-            </select>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Lance o valor por membro por semana. O ranking público exibe a semana mais recente automaticamente.</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+          <div class="form-group" style="margin:0;"><label style="font-size:12px;">Mês</label>
+            <select id="ranking-month-filter" onchange="loadRankingAdmin()"><option value="">Todos</option><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select>
           </div>
-          <div class="form-group" style="margin:0;flex:1;min-width:160px;"><label>Filtrar por Semana</label>
-            <select id="ranking-week-filter" onchange="loadRankingAdmin()">
-              <option value="">Todas</option>
-              <option>Semana 1</option><option>Semana 2</option><option>Semana 3</option>
-              <option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option>
-            </select>
+          <div class="form-group" style="margin:0;"><label style="font-size:12px;">Semana</label>
+            <select id="ranking-week-filter" onchange="loadRankingAdmin()"><option value="">Todas</option><option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option></select>
           </div>
         </div>
         <div class="data-table-container"><table class="data-table">
@@ -111,27 +116,24 @@
         </table></div>
       </div>
 
-    </div><!-- /admin-content -->
-  </div><!-- /admin-grid -->
-</div><!-- /dashboard -->
+    </div>
+  </div>
+</div>
 
 <!-- MODAIS -->
-
-<!-- Criar Usuário -->
 <div class="modal-overlay" id="create-user-modal"><div class="modal"><h3>Criar Novo Usuário</h3>
   <form id="create-user-form">
     <div class="form-group"><label>Usuário *</label><input type="text" id="new-username" required placeholder="Nome de usuário"></div>
     <div class="form-group"><label>Email *</label><input type="email" id="new-email" required placeholder="Email"></div>
-    <div class="form-group"><label>Senha *</label><input type="password" id="new-password" required placeholder="Senha" minlength="6"></div>
+    <div class="form-group"><label>Senha *</label><input type="password" id="new-password" required placeholder="Mín. 6 caracteres" minlength="6"></div>
     <div class="form-group"><label>Função *</label><select id="new-role" required><option value="user">Usuário</option><option value="admin">Administrador</option></select></div>
-    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('create-user-modal')">Cancelar</button><button type="submit" class="neon-btn">Criar</button></div>
+    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('create-user-modal')">Cancelar</button><button type="submit" class="neon-btn" id="create-user-btn">Criar</button></div>
   </form>
 </div></div>
 
-<!-- Editar Usuário -->
-<div class="modal-overlay" id="edit-user-modal"><div class="modal"><h3>Editar Usuário</h3>
+<div class="modal-overlay" id="edit-user-modal"><div class="modal"><h3>Editar Função</h3>
   <form id="edit-user-form">
-    <input type="hidden" id="edit-user-id">
+    <input type="hidden" id="edit-user-id"><input type="hidden" id="edit-user-email-hidden">
     <div class="form-group"><label>Usuário</label><input type="text" id="edit-username" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
     <div class="form-group"><label>Email</label><input type="email" id="edit-email" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
     <div class="form-group"><label>Função *</label><select id="edit-role" required><option value="user">Usuário</option><option value="admin">Administrador</option></select></div>
@@ -139,7 +141,18 @@
   </form>
 </div></div>
 
-<!-- Adicionar Pool -->
+<div class="modal-overlay" id="edit-credentials-modal"><div class="modal"><h3>✏️ Editar Credenciais</h3>
+  <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Altere o username ou envie redefinição de senha por email.</p>
+  <form id="edit-credentials-form">
+    <input type="hidden" id="cred-user-id"><input type="hidden" id="cred-user-email">
+    <div class="form-group"><label>Username atual</label><input type="text" id="cred-username-old" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
+    <div class="form-group"><label>Novo Username</label><input type="text" id="cred-username-new" placeholder="Deixe vazio para não alterar"></div>
+    <hr style="border-color:var(--border-glass);margin:16px 0;">
+    <div class="form-group"><label>Enviar redefinição de senha</label><input type="password" id="cred-password" placeholder="Digite qualquer coisa para disparar o email"><small style="color:var(--text-muted);font-size:12px;">Um link de redefinição será enviado ao email do usuário.</small></div>
+    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('edit-credentials-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
+  </form>
+</div></div>
+
 <div class="modal-overlay" id="add-pool-modal"><div class="modal"><h3>Adicionar Dados de Pool</h3>
   <form id="add-pool-form">
     <div class="form-group"><label>Usuário *</label><select id="pool-user" required><option value="">Selecione...</option></select></div>
@@ -155,7 +168,6 @@
   </form>
 </div></div>
 
-<!-- Editar Pool -->
 <div class="modal-overlay" id="edit-pool-modal"><div class="modal"><h3>Editar Pool</h3>
   <form id="edit-pool-form">
     <input type="hidden" id="edit-pool-id">
@@ -171,7 +183,6 @@
   </form>
 </div></div>
 
-<!-- AAVE -->
 <div class="modal-overlay" id="add-aave-modal"><div class="modal"><h3>Atualizar Dados AAVE</h3>
   <form id="add-aave-form">
     <div class="form-group"><label>Usuário *</label><select id="aave-user" required><option value="">Selecione...</option></select></div>
@@ -186,9 +197,8 @@
   </form>
 </div></div>
 
-<!-- Lançar Ranking -->
 <div class="modal-overlay" id="add-ranking-modal"><div class="modal"><h3>🏆 Lançar Ranking da Semana</h3>
-  <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Insira o valor do membro para a semana. A vela é proporcional ao valor lançado — sem mostrar números.</p>
+  <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Valores não aparecem no público — só as velas proporcionais.</p>
   <form id="add-ranking-form">
     <div class="form-group"><label>Mês *</label><select id="ranking-month" required><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
     <div class="form-group"><label>Semana *</label><select id="ranking-week" required><option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option></select></div>
@@ -198,7 +208,6 @@
   </form>
 </div></div>
 
-<!-- Editar Ranking -->
 <div class="modal-overlay" id="edit-ranking-modal"><div class="modal"><h3>Editar Ranking</h3>
   <form id="edit-ranking-form">
     <input type="hidden" id="edit-ranking-id">
@@ -216,4 +225,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="js/main.js"></script>
 <script src="js/admin.js"></script>
+<script>
+// Limpar filtros de pools
+function clearPoolFilters() {
+    document.getElementById('pool-user-filter').value = '';
+    document.getElementById('pool-month-filter').value = '';
+    document.getElementById('pool-week-filter').value = '';
+    loadUserPools();
+}
+</script>
 </body></html>

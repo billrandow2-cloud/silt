@@ -1,11 +1,139 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://cdn.jsdelivr.net;">
     <title>S.I.L.T. System - Bem-vindo</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* ── Animação do gráfico ── */
+        .chart-intro {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 48px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease 0.2s forwards;
+        }
+
+        .chart-svg-wrap {
+            position: relative;
+            height: 120px;
+        }
+
+        /* Linha do gráfico cresce da esquerda */
+        .chart-line {
+            stroke-dasharray: 800;
+            stroke-dashoffset: 800;
+            animation: drawLine 2s cubic-bezier(0.4, 0, 0.2, 1) 0.4s forwards;
+        }
+
+        /* Área sob a linha aparece junto */
+        .chart-area {
+            opacity: 0;
+            animation: fadeIn 0.5s ease 1.8s forwards;
+        }
+
+        /* Pontos aparecem depois */
+        .chart-dot {
+            opacity: 0;
+        }
+        .chart-dot:nth-child(1) { animation: popIn 0.3s ease 1.0s forwards; }
+        .chart-dot:nth-child(2) { animation: popIn 0.3s ease 1.2s forwards; }
+        .chart-dot:nth-child(3) { animation: popIn 0.3s ease 1.4s forwards; }
+        .chart-dot:nth-child(4) { animation: popIn 0.3s ease 1.6s forwards; }
+        .chart-dot:nth-child(5) { animation: popIn 0.3s ease 1.8s forwards; }
+
+        /* Seta "subindo" no final */
+        .arrow-up {
+            opacity: 0;
+            animation: popIn 0.4s ease 2s forwards;
+        }
+
+        /* Texto hero aparece só depois do gráfico */
+        .hero-text-wrap {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.8s ease 1.6s forwards;
+        }
+
+        @keyframes drawLine {
+            to { stroke-dashoffset: 0; }
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        @keyframes fadeInUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Cards S.I.L.T. ── */
+        .silt-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 48px;
+        }
+
+        .silt-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 28px 20px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .silt-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(168,85,247,0.08), transparent);
+            transition: left 0.5s ease;
+        }
+        .silt-card:hover::before { left: 100%; }
+        .silt-card:hover {
+            border-color: var(--border-glass-hover);
+            transform: translateY(-4px);
+            box-shadow: 0 0 30px rgba(168,85,247,0.2);
+        }
+
+        .silt-letter {
+            font-size: 52px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--neon-purple), var(--neon-purple-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            margin-bottom: 12px;
+        }
+
+        .silt-word {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .silt-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .silt-icon {
+            font-size: 28px;
+            margin-bottom: 16px;
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <div class="particles"></div>
@@ -22,36 +150,142 @@
         </div>
     </header>
 
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- HERO — gráfico animado + texto                 -->
+    <!-- ══════════════════════════════════════════════ -->
     <section class="hero">
-        <div class="hero-content" style="width:100%;max-width:900px;margin:0 auto;padding:0 20px;">
-            <h1 class="hero-title" style="text-align:center;margin-bottom:30px;">
-                <span class="gradient-text" style="display:block;animation:fadeInDown 1s ease;">BEM VINDO AO SISTEMA S.I.L.T.</span>
-            </h1>
-            <p class="hero-subtitle" style="text-align:center;opacity:0;animation:fadeInUp 1s ease 0.8s forwards;">Aqui começa o seu futuro fora da corrida dos ratos</p>
-            <div style="margin-top:48px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
-                <a href="login.html" class="neon-btn">Acessar Dashboard</a>
-                <a href="#ranking" class="neon-btn secondary">Ver Ranking</a>
+        <div style="width:100%;max-width:900px;margin:0 auto;padding:0 20px;display:flex;flex-direction:column;align-items:center;">
+
+            <!-- Gráfico animado -->
+            <div class="chart-intro">
+                <div class="chart-svg-wrap">
+                    <svg viewBox="0 0 580 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;overflow:visible;">
+                        <defs>
+                            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%"   stop-color="#a855f7" stop-opacity="0.35"/>
+                                <stop offset="100%" stop-color="#a855f7" stop-opacity="0"/>
+                            </linearGradient>
+                            <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%"   stop-color="#7c3aed"/>
+                                <stop offset="100%" stop-color="#c084fc"/>
+                            </linearGradient>
+                            <filter id="glow">
+                                <feGaussianBlur stdDeviation="3" result="blur"/>
+                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                            </filter>
+                        </defs>
+
+                        <!-- Grade horizontal sutil -->
+                        <line x1="0" y1="100" x2="580" y2="100" stroke="rgba(168,85,247,0.1)" stroke-width="1"/>
+                        <line x1="0" y1="70"  x2="580" y2="70"  stroke="rgba(168,85,247,0.07)" stroke-width="1"/>
+                        <line x1="0" y1="40"  x2="580" y2="40"  stroke="rgba(168,85,247,0.07)" stroke-width="1"/>
+
+                        <!-- Área preenchida -->
+                        <path class="chart-area"
+                            d="M 20,95 C 80,90 120,80 170,72 C 230,63 270,55 330,42 C 390,30 430,22 490,10 L 490,100 L 20,100 Z"
+                            fill="url(#areaGrad)"/>
+
+                        <!-- Linha principal -->
+                        <path class="chart-line"
+                            d="M 20,95 C 80,90 120,80 170,72 C 230,63 270,55 330,42 C 390,30 430,22 490,10"
+                            fill="none" stroke="url(#lineGrad)" stroke-width="3"
+                            stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+
+                        <!-- Pontos -->
+                        <circle class="chart-dot" cx="20"  cy="95" r="5" fill="#7c3aed"/>
+                        <circle class="chart-dot" cx="170" cy="72" r="5" fill="#8b5cf6"/>
+                        <circle class="chart-dot" cx="270" cy="55" r="5" fill="#a855f7"/>
+                        <circle class="chart-dot" cx="390" cy="30" r="5" fill="#b060f8"/>
+                        <circle class="chart-dot" cx="490" cy="10" r="5" fill="#c084fc"/>
+
+                        <!-- Seta de alta no topo -->
+                        <g class="arrow-up" transform="translate(500, 4)">
+                            <polygon points="0,-10 8,4 -8,4" fill="#22c55e" filter="url(#glow)"/>
+                            <text x="12" y="5" fill="#22c55e" font-size="12" font-weight="700" font-family="system-ui">+∞%</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Texto hero -->
+            <div class="hero-text-wrap" style="text-align:center;">
+                <h1 class="hero-title" style="margin-bottom:20px;">
+                    <span class="gradient-text">BEM VINDO AO SISTEMA S.I.L.T.</span>
+                </h1>
+                <p class="hero-subtitle" style="margin-bottom:0;">
+                    Aqui começa o seu futuro fora da corrida dos ratos
+                </p>
+                <div style="margin-top:40px;display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+                    <a href="login.html" class="neon-btn">Acessar Dashboard</a>
+                    <a href="#ranking" class="neon-btn secondary">Ver Ranking</a>
+                </div>
             </div>
         </div>
-        <div style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);opacity:0.5;animation:bounce 2s infinite;">
+
+        <div style="position:absolute;bottom:40px;left:50%;transform:translateX(-50%);opacity:0.5;animation:bounce 2s infinite 2.5s;">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--neon-purple);">
                 <path d="M12 5v14M19 12l-7 7-7-7"/>
             </svg>
         </div>
     </section>
 
-    <!-- RANKING -->
-    <section id="ranking" style="padding:100px 24px;max-width:1100px;margin:0 auto;">
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- O QUE É S.I.L.T.                              -->
+    <!-- ══════════════════════════════════════════════ -->
+    <section style="padding:80px 24px;max-width:1000px;margin:0 auto;text-align:center;">
+        <h2 style="font-size:36px;margin-bottom:12px;">
+            <span class="gradient-text">O que é S.I.L.T.?</span>
+        </h2>
+        <p style="color:var(--text-secondary);max-width:560px;margin:0 auto 16px;">
+            Cada letra carrega um propósito. Juntas, formam o caminho para quem quer sair da corrida dos ratos.
+        </p>
+
+        <div class="silt-grid">
+            <div class="silt-card">
+                <span class="silt-icon">🛡️</span>
+                <div class="silt-letter">S</div>
+                <div class="silt-word">Segurança Financeira</div>
+                <div class="silt-desc">Construir uma base sólida que protege você e sua família de imprevistos.</div>
+            </div>
+            <div class="silt-card">
+                <span class="silt-icon">⚡</span>
+                <div class="silt-letter">I</div>
+                <div class="silt-word">Independência Financeira</div>
+                <div class="silt-desc">Ter renda suficiente para viver sem depender exclusivamente do seu trabalho.</div>
+            </div>
+            <div class="silt-card">
+                <span class="silt-icon">🕊️</span>
+                <div class="silt-letter">L</div>
+                <div class="silt-word">Liberdade Financeira</div>
+                <div class="silt-desc">Fazer escolhas de vida baseadas no que você quer, não no que precisa.</div>
+            </div>
+            <div class="silt-card">
+                <span class="silt-icon">🌊</span>
+                <div class="silt-letter">T</div>
+                <div class="silt-word">Tranquilidade Financeira</div>
+                <div class="silt-desc">Dormir sem preocupações com dinheiro. Saber que o futuro está sendo cuidado.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- RANKING                                        -->
+    <!-- ══════════════════════════════════════════════ -->
+    <section id="ranking" style="padding:80px 24px;max-width:1100px;margin:0 auto;">
         <h2 style="text-align:center;font-size:36px;margin-bottom:12px;">
             <span class="gradient-text">🏆 Ranking</span>
         </h2>
         <p style="text-align:center;color:var(--text-secondary);margin-bottom:6px;">Quem tem a vela maior é o líder</p>
-        <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:48px;flex-wrap:wrap;">
+        <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
             <span id="ranking-month-label" style="color:var(--neon-purple,#a855f7);font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1px;"></span>
             <span style="color:var(--border-glass);">•</span>
             <span id="ranking-week-label"  style="color:var(--text-secondary);font-size:14px;font-weight:500;"></span>
         </div>
-
+        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px;flex-wrap:wrap;">
+            <button id="ranking-prev" style="background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);color:var(--text-secondary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all 0.2s;">← Anterior</button>
+            <select id="ranking-period-select" style="background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);color:var(--text-primary);padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;max-width:240px;"></select>
+            <button id="ranking-next" style="background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);color:var(--text-secondary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all 0.2s;">Próximo →</button>
+        </div>
         <div class="glass-card" style="padding:32px;min-height:440px;display:flex;align-items:flex-end;justify-content:center;">
             <div id="ranking-chart" style="width:100%;">
                 <div style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--text-muted);">
@@ -60,7 +294,6 @@
                 </div>
             </div>
         </div>
-
         <div style="display:flex;justify-content:center;gap:24px;margin-top:24px;flex-wrap:wrap;">
             <span style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px;"><span style="display:inline-block;width:16px;height:16px;background:linear-gradient(180deg,#fbbf24,#f59e0b);border-radius:3px;"></span> 1º lugar</span>
             <span style="display:flex;align-items:center;gap:8px;color:var(--text-secondary);font-size:13px;"><span style="display:inline-block;width:16px;height:16px;background:linear-gradient(180deg,#94a3b8,#64748b);border-radius:3px;"></span> 2º lugar</span>
@@ -69,7 +302,10 @@
         </div>
     </section>
 
-    <section id="sobre" style="padding:100px 24px;max-width:1200px;margin:0 auto;">
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SOBRE                                          -->
+    <!-- ══════════════════════════════════════════════ -->
+    <section id="sobre" style="padding:80px 24px;max-width:1200px;margin:0 auto;">
         <h2 style="text-align:center;font-size:36px;margin-bottom:16px;"><span class="gradient-text">O Sistema S.I.L.T.</span></h2>
         <p style="text-align:center;color:var(--text-secondary);margin-bottom:64px;max-width:600px;margin-left:auto;margin-right:auto;">
             Uma plataforma completa para gestão de investimentos em pools e AAVE, com visualização de dados em tempo real.
@@ -99,9 +335,13 @@
     <script>
         const s = document.createElement('style');
         s.textContent = `
-            @keyframes bounce{0%,20%,50%,80%,100%{transform:translateX(-50%) translateY(0);}40%{transform:translateX(-50%) translateY(-10px);}60%{transform:translateX(-50%) translateY(-5px);}}
-            @keyframes fadeInDown{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
-            @keyframes fadeInUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+            @keyframes bounce {
+                0%,20%,50%,80%,100% { transform:translateX(-50%) translateY(0); }
+                40% { transform:translateX(-50%) translateY(-10px); }
+                60% { transform:translateX(-50%) translateY(-5px); }
+            }
+            #ranking-prev:hover, #ranking-next:hover { border-color:var(--neon-purple); color:var(--neon-purple); }
+            #ranking-prev:disabled, #ranking-next:disabled { opacity:0.3; cursor:not-allowed; }
         `;
         document.head.appendChild(s);
     </script>
