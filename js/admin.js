@@ -198,7 +198,7 @@ document.getElementById('edit-credentials-form')?.addEventListener('submit', asy
 // SOLUÇÃO DEFINITIVA: passa o userId diretamente na URL.
 // Sem localStorage, sem sessionStorage — funciona sempre.
 function viewUserDashboard(userId, username) {
-    const url = `/dashboard?uid=${encodeURIComponent(userId)}&name=${encodeURIComponent(username)}`;
+    const url = `dashboard.html?uid=${encodeURIComponent(userId)}&name=${encodeURIComponent(username)}`;
     window.open(url, '_blank');
 }
 
