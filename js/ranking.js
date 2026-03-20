@@ -173,21 +173,17 @@ function setViewMode(mode) {
 }
 
 // ── Cores ──────────────────────────────────────────
-function getColor(pts, isWinner) {
-    if (isWinner)  return 'linear-gradient(180deg,#fbbf24,#f59e0b)';
-    if (pts >= 8)  return 'linear-gradient(180deg,#22c55e,#16a34a)';
-    if (pts >= 6)  return 'linear-gradient(180deg,#3b82f6,#2563eb)';
-    if (pts >= 4)  return 'linear-gradient(180deg,#a855f7,#7c3aed)';
-    if (pts >= 2)  return 'linear-gradient(180deg,#f59e0b,#d97706)';
-    return 'linear-gradient(180deg,#ef4444,#dc2626)';
+function getColor(pos) {
+    if (pos === 0) return 'linear-gradient(180deg,#fbbf24,#f59e0b)'; // ouro
+    if (pos === 1) return 'linear-gradient(180deg,#94a3b8,#64748b)'; // prata
+    if (pos === 2) return 'linear-gradient(180deg,#c2844a,#a0522d)'; // bronze
+    return 'linear-gradient(180deg,#a855f7,#7c3aed)';                // roxo demais
 }
-function getWick(pts, isWinner) {
-    if (isWinner)  return '#fbbf24';
-    if (pts >= 8)  return '#22c55e';
-    if (pts >= 6)  return '#3b82f6';
-    if (pts >= 4)  return '#a855f7';
-    if (pts >= 2)  return '#f59e0b';
-    return '#ef4444';
+function getWick(pos) {
+    if (pos === 0) return '#fbbf24';
+    if (pos === 1) return '#94a3b8';
+    if (pos === 2) return '#c2844a';
+    return '#a855f7';
 }
 
 function renderCandles(container, entries) {
@@ -212,8 +208,8 @@ function renderCandles(container, entries) {
         const isWinner = i === 0;
         const medal    = i < 3 ? medals[i] : '';
         const wickH    = Math.round(height*0.12)+6;
-        const color    = getColor(pts, isWinner);
-        const wick     = getWick(pts, isWinner);
+        const color    = getColor(i);
+        const wick     = getWick(i);
         const glow     = isWinner
             ? '0 0 28px rgba(251,191,36,.8),0 0 56px rgba(251,191,36,.3)'
             : `0 0 12px ${wick}55`;
