@@ -40,8 +40,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Modo normal
         targetUserId = currentUser.id;
         const { data: ud } = await supabaseClient
-            .from('users').select('username').eq('id', currentUser.id).single();
+            .from('users').select('username, profit_share').eq('id', currentUser.id).single();
         currentUsername = ud?.username || currentUser.email.split('@')[0];
+        window.PROFIT_SHARE = ud?.profit_share !== null && ud?.profit_share !== undefined ? parseFloat(ud.profit_share) : 50;
     }
 
     document.getElementById('user-name').textContent   = currentUsername;
@@ -290,12 +291,16 @@ function renderWeeks(month) {
     var usdto=parseFloat(aaveMes&&(aaveMes.usdto_value||aaveMes.borrow_value)||0);
     var mpv=0; Object.values(mPos).forEach(function(p){mpv+=p.current>0?p.current:p.fallback;});
 
-    var sum=document.createElement('div'); sum.className='glass-card';
+        var profitShare   = window.PROFIT_SHARE !== undefined ? window.PROFIT_SHARE : 50;
+    var myShareValue  = mpv * (profitShare / 100);
+    var myShareProfit = monthTotalProfit * (profitShare / 100);
+
+var sum=document.createElement('div'); sum.className='glass-card';
     sum.style.cssText='margin-top:24px;border:1px solid rgba(168,85,247,0.3);';
     sum.innerHTML='<h3 style="margin-bottom:20px;color:var(--neon-purple,#a855f7);">📊 Resumo — '+month+'</h3>'
         +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:'+(weth>0?'20px':'0')+';">'
-        +'<div style="text-align:center;padding:12px;background:rgba(168,85,247,0.1);border-radius:12px;"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Valor Atual Pools</p><p style="font-size:20px;font-weight:700;">'+fmt(mpv)+'</p></div>'
-        +'<div style="text-align:center;padding:12px;background:rgba(34,197,94,0.1);border-radius:12px;"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Lucro Total</p><p style="font-size:20px;font-weight:700;color:#22c55e;">+'+fmt(monthTotalProfit)+'</p></div>'
+        +'<div<div style="text-align:center;padding:12px;background:rgba(168,85,247,0.1);border-radius:12px;"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Valor Atual Pools</p><p style="font-size:20px;font-weight:700;">'+fmt(mpv)+'</p><p style="font-size:12px;color:var(--neon-purple,#a855f7);margin-top:4px;">'+profitShare.toFixed(0)+'% → '+fmt(myShareValue)+'</p></div>'
+        +'<div style="text-align:center;padding:12px;background:rgba(34,197,94,0.1);border-radius:12px;"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Lucro Total</p><p style="font-size:20px;font-weight:700;color:#22c55e;">+'+fmt(monthTotalProfit)+'</p><p style="font-size:12px;color:#22c55e;margin-top:4px;">'+profitShare.toFixed(0)+'% → +'+fmt(myShareProfit)+'</p></div>'
         +'</div>'
         +(weth>0
             ?'<div style="padding-top:16px;border-top:1px solid var(--border-glass);"><h4 style="margin-bottom:12px;color:var(--text-secondary);">Total com AAVE ('+month+')</h4>'

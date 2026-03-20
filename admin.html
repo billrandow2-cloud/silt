@@ -11,7 +11,7 @@
 <div class="particles"></div><div class="header-trigger"></div>
 <header class="floating-header visible"><div class="header-content">
     <a href="admin.html" class="logo"><span>◆</span> S.I.L.T. Admin</a>
-    <nav><ul class="nav-links"><li><a href="index.html">Home</a></li><li><a href="dashboard.html">Dashboard</a></li><li><a href="#" onclick="logout()">Sair</a></li></ul></nav>
+    <nav><ul class="nav-links"><li><a href="dashboard.html">Dashboard</a></li><li><a href="#" onclick="logout()">Sair</a></li></ul></nav>
 </div></header>
 
 <div class="dashboard">
@@ -36,7 +36,7 @@
           <h2>Gerenciar Usuários</h2><button class="neon-btn" onclick="openModal('create-user-modal')">+ Novo Usuário</button>
         </div>
         <div class="data-table-container"><table class="data-table">
-          <thead><tr><th>Usuário</th><th>Email</th><th>Função</th><th>Criado em</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Usuário</th><th>Email</th><th>Função</th><th>% Lucro</th><th>Criado em</th><th>Ações</th></tr></thead>
           <tbody id="users-table-body"><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr></tbody>
         </table></div>
       </div>
@@ -111,7 +111,7 @@
           </div>
         </div>
         <div class="data-table-container"><table class="data-table">
-          <thead><tr><th>Mês</th><th>Semana</th><th>Membro</th><th>Valor (USD)</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Período</th><th>Semana</th><th>Membro</th><th>Pontuação</th><th>Ações</th></tr></thead>
           <tbody id="ranking-table-body"><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr></tbody>
         </table></div>
       </div>
@@ -198,12 +198,19 @@
 </div></div>
 
 <div class="modal-overlay" id="add-ranking-modal"><div class="modal"><h3>🏆 Lançar Ranking da Semana</h3>
-  <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Valores não aparecem no público — só as velas proporcionais.</p>
+  <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">A pontuação define o tamanho da vela. 10 = máximo, 0 = mínimo.</p>
   <form id="add-ranking-form">
     <div class="form-group"><label>Mês *</label><select id="ranking-month" required><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
     <div class="form-group"><label>Semana *</label><select id="ranking-week" required><option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option></select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label>Início da Semana *</label><input type="date" id="ranking-week-start" required></div>
+      <div class="form-group"><label>Fim da Semana *</label><input type="date" id="ranking-week-end" required></div>
+    </div>
     <div class="form-group"><label>Nome do Membro *</label><input type="text" id="ranking-username" required placeholder="Ex: Matheus"></div>
-    <div class="form-group"><label>Valor (USD) *</label><input type="number" id="ranking-value" step="0.01" min="0" required placeholder="Ex: 478.43"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label>Pontos início *</label><input type="number" id="ranking-points-start" step="0.1" min="0" max="10" required placeholder="Ex: 5.0"></div>
+      <div class="form-group"><label>Pontos fim <span style="color:var(--text-muted);font-size:11px;">(opcional — preencher só ao final)</span></label><input type="number" id="ranking-points-end" step="0.1" min="0" max="10" placeholder="Ex: 7.5"></div>
+    </div>
     <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('add-ranking-modal')">Cancelar</button><button type="submit" class="neon-btn">Lançar</button></div>
   </form>
 </div></div>
@@ -214,9 +221,40 @@
     <div class="form-group"><label>Mês</label><input type="text" id="edit-ranking-month" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
     <div class="form-group"><label>Semana</label><input type="text" id="edit-ranking-week" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
     <div class="form-group"><label>Membro</label><input type="text" id="edit-ranking-username" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
-    <div class="form-group"><label>Valor (USD) *</label><input type="number" id="edit-ranking-value" step="0.01" min="0" required></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label>Início da Semana</label><input type="date" id="edit-ranking-week-start"></div>
+      <div class="form-group"><label>Fim da Semana</label><input type="date" id="edit-ranking-week-end"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label>Pontos início *</label><input type="number" id="edit-ranking-points-start" step="0.1" min="0" max="10" required></div>
+      <div class="form-group"><label>Pontos fim <span style="color:var(--text-muted);font-size:11px;">(opcional)</span></label><input type="number" id="edit-ranking-points-end" step="0.1" min="0" max="10"></div>
+    </div>
     <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('edit-ranking-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
   </form>
+</div></div>
+
+<!-- Modal: editar % de lucro -->
+<div class="modal-overlay" id="edit-share-modal"><div class="modal">
+    <h3>💰 Porcentagem de Lucro</h3>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">
+        Define quanto do lucro das pools o usuário recebe. Pode ser alterado a qualquer momento.
+    </p>
+    <form id="edit-share-form">
+        <input type="hidden" id="share-user-id">
+        <div class="form-group">
+            <label>Usuário</label>
+            <p id="share-username-label" style="font-weight:600;font-size:16px;color:var(--neon-purple,#a855f7);margin-top:4px;"></p>
+        </div>
+        <div class="form-group">
+            <label>Porcentagem (%) *</label>
+            <input type="number" id="share-percent" step="1" min="0" max="100" required placeholder="Ex: 50">
+            <small style="color:var(--text-muted);font-size:12px;">Ex: 50 = 50%, 40 = 40%, 60 = 60%</small>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="outline-btn" onclick="closeModal('edit-share-modal')">Cancelar</button>
+            <button type="submit" class="neon-btn">Salvar</button>
+        </div>
+    </form>
 </div></div>
 
 <div class="toast-container"></div>
