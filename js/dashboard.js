@@ -32,10 +32,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const urlName = params.get('name');
 
     if (urlUid && urlUid !== currentUser.id) {
-        // Modo admin view
+        // Modo admin view — buscar dados do usuário alvo, incluindo profit_share
         isAdminView     = true;
         targetUserId    = urlUid;
         currentUsername = urlName ? decodeURIComponent(urlName) : 'Usuário';
+        const { data: targetUserData } = await supabaseClient
+            .from('users').select('profit_share').eq('id', urlUid).single();
+        window.PROFIT_SHARE = (targetUserData?.profit_share !== null && targetUserData?.profit_share !== undefined)
+            ? parseFloat(targetUserData.profit_share) : 50;
     } else {
         // Modo normal
         targetUserId = currentUser.id;
