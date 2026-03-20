@@ -119,32 +119,69 @@ function getPoolsValueForMonth(month) {
         const ini = parseFloat(p.initial_value||p.invested_value||0);
         const con = parseFloat(p.contribution_value||0);
         const pro = parseFloat(p.profit_value||0);
-        if (!pos[p.pool_name]) pos[p.pool_name] = { current:0, fallback:0 };
+        if (!pos[p.pool_name]) pos[p.pool_name] = { current:0, fallback:0, capital:0, profit:0 };
         if (cur > 0) pos[p.pool_name].current = cur;
         pos[p.pool_name].fallback = ini + con + pro;
+        pos[p.pool_name].capital  = Math.max(pos[p.pool_name].capital, ini + con);
+        pos[p.pool_name].profit  += pro;
     });
     var total = 0;
     Object.values(pos).forEach(function(p) { total += p.current > 0 ? p.current : p.fallback; });
     return total;
 }
 
+// Retorna {capital, profit} separados para aplicar % só no lucro
+function getPoolsBreakdownForMonth(month) {
+    const pos = {};
+    userPoolData.filter(p => p.month === month).forEach(p => {
+        const cur = parseFloat(p.current_value||0);
+        const ini = parseFloat(p.initial_value||p.invested_value||0);
+        const con = parseFloat(p.contribution_value||0);
+        const pro = parseFloat(p.profit_value||0);
+        if (!pos[p.pool_name]) pos[p.pool_name] = { current:0, capital:0, profit:0 };
+        if (cur > 0) pos[p.pool_name].current = cur;
+        // Capital = valor investido (sem lucro)
+        pos[p.pool_name].capital = Math.max(pos[p.pool_name].capital, ini + con);
+        pos[p.pool_name].profit += pro;
+    });
+    var capital = 0, profit = 0;
+    Object.values(pos).forEach(function(p) {
+        // Se tiver current_value, estimar capital como current - profit acumulado
+        if (p.current > 0) {
+            capital += Math.max(0, p.current - p.profit);
+            profit  += p.profit;
+        } else {
+            capital += p.capital;
+            profit  += p.profit;
+        }
+    });
+    return { capital, profit };
+}
+
 function updateDashboardValues() {
     const lm = getLatestMonth(); if (!lm) return;
-    const pools  = getPoolsValueForMonth(lm);
     const weth   = parseFloat(userAaveData?.weth_value  || userAaveData?.aave_balance || 0);
     const borrow = parseFloat(userAaveData?.usdto_value || userAaveData?.borrow_value || 0);
+    const share  = window.PROFIT_SHARE !== undefined ? window.PROFIT_SHARE : 50;
+    const pct    = share / 100;
 
-    setVal('total-balance',   weth + pools);
-    setVal('pools-balance',   pools);
+    // Separar capital (100% do usuário) e lucro (dividido pela %)
+    const bd      = getPoolsBreakdownForMonth(lm);
+    const poolsCapital = bd.capital;            // capital investido — 100% do usuário
+    const poolsProfit  = bd.profit;             // lucro — dividido pela %
+    const poolsUser    = poolsCapital + (poolsProfit * pct); // total real do usuário nas pools
+
+    setVal('pools-balance',   poolsUser);
     setVal('aave-balance',    weth);
     setVal('aave-display',    weth);
     setVal('borrow-display',  borrow);
     setVal('net-display',     weth - borrow);
-    setVal('total-sem-pagar', weth - borrow + pools);
-    setVal('total-pagando',   weth + pools);
+    setVal('total-balance',   weth + poolsUser);
+    setVal('total-sem-pagar', weth - borrow + poolsUser);
+    setVal('total-pagando',   weth + poolsUser);
 
     const label = document.getElementById('current-month-label');
-    if (label) label.textContent = 'Referência: ' + lm;
+    if (label) label.textContent = 'Referência: ' + lm + ' · ' + share.toFixed(0) + '% do lucro';
     updateCurrencyDisplay();
 }
 
@@ -274,9 +311,11 @@ function renderWeeks(month) {
             var pro=parseFloat(p.profit_value||0);
             var cur=parseFloat(p.current_value||0);
             wProfit+=pro; monthTotalProfit+=pro;
-            if (!mPos[p.pool_name]) mPos[p.pool_name]={current:0,fallback:0};
+            if (!mPos[p.pool_name]) mPos[p.pool_name]={current:0,fallback:0,capital:0,profit:0};
             if (cur>0) mPos[p.pool_name].current=cur;
             mPos[p.pool_name].fallback=ini+con+pro;
+            mPos[p.pool_name].capital=Math.max(mPos[p.pool_name].capital,ini+con);
+            mPos[p.pool_name].profit+=pro;
             var diff=cur>0?cur-(ini+con):pro;
             var dt=cur>0?'<span style="color:'+(diff>=0?'#22c55e':'#ef4444')+';font-size:12px;">'+(diff>=0?'▲':'▼')+fmt(Math.abs(diff))+'</span>':'';
             return '<tr><td>'+p.pool_name+'</td><td>'+fmt(ini+con)+'</td><td>'+(yp>0?yp.toFixed(2)+'%':'-')+'</td><td style="color:var(--success);">+'+fmt(pro)+'</td><td>'+(cur>0?fmt(cur)+' '+dt:fmt(ini+con+pro))+'</td></tr>';
@@ -289,11 +328,19 @@ function renderWeeks(month) {
     var aaveMes=allAaveData.find(function(a){return a.month===month;})||null;
     var weth=parseFloat(aaveMes&&(aaveMes.weth_value||aaveMes.aave_balance)||0);
     var usdto=parseFloat(aaveMes&&(aaveMes.usdto_value||aaveMes.borrow_value)||0);
-    var mpv=0; Object.values(mPos).forEach(function(p){mpv+=p.current>0?p.current:p.fallback;});
+    var mpv=0;
+    var mpvCapital=0; // capital investido (100% do usuário)
+    Object.values(mPos).forEach(function(p){
+        var val = p.current>0 ? p.current : p.fallback;
+        mpv += val;
+        // Estimar capital: valor total menos lucro acumulado (ou fallback - profit)
+        mpvCapital += p.current>0 ? Math.max(0, p.current - p.profit) : (p.capital||0);
+    });
 
         var profitShare   = window.PROFIT_SHARE !== undefined ? window.PROFIT_SHARE : 50;
-    var myShareValue  = mpv * (profitShare / 100);
-    var myShareProfit = monthTotalProfit * (profitShare / 100);
+    var mpvProfit     = mpv - mpvCapital;                        // lucro total das pools no mês
+    var myShareProfit = mpvProfit * (profitShare / 100);         // parte do usuário no lucro
+    var myShareValue  = mpvCapital + myShareProfit;              // capital 100% + lucro proporcional
 
 var sum=document.createElement('div'); sum.className='glass-card';
     sum.style.cssText='margin-top:24px;border:1px solid rgba(168,85,247,0.3);';
@@ -305,8 +352,8 @@ var sum=document.createElement('div'); sum.className='glass-card';
         +(weth>0
             ?'<div style="padding-top:16px;border-top:1px solid var(--border-glass);"><h4 style="margin-bottom:12px;color:var(--text-secondary);">Total com AAVE ('+month+')</h4>'
               +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">'
-              +'<div style="padding:14px;background:rgba(239,68,68,0.08);border-radius:12px;border:1px solid rgba(239,68,68,0.2);"><p style="color:var(--text-muted);font-size:12px;margin-bottom:6px;">SEM pagar empréstimo</p><p style="font-size:22px;font-weight:700;">'+fmt(weth-usdto+mpv)+'</p></div>'
-              +'<div style="padding:14px;background:rgba(34,197,94,0.08);border-radius:12px;border:1px solid rgba(34,197,94,0.2);"><p style="color:var(--text-muted);font-size:12px;margin-bottom:6px;">PAGANDO empréstimo</p><p style="font-size:22px;font-weight:700;">'+fmt(weth+mpv)+'</p></div>'
+              +'<div style="padding:14px;background:rgba(239,68,68,0.08);border-radius:12px;border:1px solid rgba(239,68,68,0.2);"><p style="color:var(--text-muted);font-size:12px;margin-bottom:6px;">SEM pagar empréstimo</p><p style="font-size:22px;font-weight:700;">'+fmt(weth-usdto+myShareValue)+'</p><p style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+profitShare.toFixed(0)+'% das pools</p></div>'
+              +'<div style="padding:14px;background:rgba(34,197,94,0.08);border-radius:12px;border:1px solid rgba(34,197,94,0.2);"><p style="color:var(--text-muted);font-size:12px;margin-bottom:6px;">PAGANDO empréstimo</p><p style="font-size:22px;font-weight:700;">'+fmt(weth+myShareValue)+'</p><p style="font-size:12px;color:var(--text-muted);margin-top:4px;">'+profitShare.toFixed(0)+'% das pools</p></div>'
               +'</div></div>'
             :'');
     container.appendChild(sum);
