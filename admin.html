@@ -5,7 +5,41 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co https://api.exchangerate-api.com https://cdn.jsdelivr.net;">
     <title>Admin Panel - S.I.L.T. System</title>
     <link rel="stylesheet" href="css/style.css">
-    <style>.modal{max-height:85vh;overflow-y:auto;overflow-x:hidden;}.modal::-webkit-scrollbar{width:6px;}.modal::-webkit-scrollbar-thumb{background:var(--neon-purple,#a855f7);border-radius:3px;}</style>
+    <style>
+        .modal{max-height:85vh;overflow-y:auto;overflow-x:hidden;}
+        .modal::-webkit-scrollbar{width:6px;}
+        .modal::-webkit-scrollbar-thumb{background:var(--neon-purple,#a855f7);border-radius:3px;}
+
+        /* Alinhamento vertical uniforme — todas as tabelas */
+        .data-table td, .data-table th {
+            vertical-align: middle;
+        }
+        /* Ações não quebram linha e ficam alinhadas */
+        .data-table td.actions {
+            white-space: nowrap;
+            display: table-cell !important;
+            vertical-align: middle !important;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .data-table td.actions button {
+            vertical-align: middle;
+            line-height: 1;
+        }
+        /* Linha do ranking com altura mínima para acomodar a barra de progresso */
+        #ranking-table-body tr {
+            height: 56px;
+        }
+        /* Todas as seções admin sempre visíveis */
+        .admin-section {
+            display: block !important;
+            margin-bottom: 48px;
+        }
+        .admin-section:not(:last-child) {
+            border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 48px;
+        }
+    </style>
 </head>
 <body>
 <div class="particles"></div><div class="header-trigger"></div>
@@ -20,15 +54,10 @@
     <div class="user-info"><div class="user-avatar" style="background:linear-gradient(135deg,#ef4444,#dc2626);" id="admin-avatar">A</div></div>
   </div>
 
-  <div class="admin-grid">
-    <div class="admin-sidebar"><h3>Menu</h3><ul class="admin-menu">
-      <li><button class="active" onclick="showAdminSection('users')"   data-section="users"><span>👥</span> Usuários</button></li>
-      <li><button onclick="showAdminSection('pools')"   data-section="pools"><span>💰</span> Pools</button></li>
-      <li><button onclick="showAdminSection('aave')"    data-section="aave"><span>🏦</span> AAVE</button></li>
-      <li><button onclick="showAdminSection('ranking')" data-section="ranking"><span>🏆</span> Ranking</button></li>
-    </ul></div>
+  <div style="max-width:1400px;margin:0 auto;">
 
-    <div class="admin-content">
+
+    <div>
 
       <!-- USUÁRIOS -->
       <div id="admin-users" class="admin-section active">

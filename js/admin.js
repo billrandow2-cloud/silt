@@ -336,7 +336,7 @@ async function loadRankingAdmin() {
                     <span style="font-size:11px;color:var(--text-muted);">/10</span>
                 </div>
             </td>
-            <td class="actions">
+            <td class="actions" style="vertical-align:middle;white-space:nowrap;">
                 <button class="edit"   onclick="openEditRanking('${r.id}','${r.month}','${r.week}','${r.username}',${parseFloat(r.points_start||0)},${parseFloat(r.points_end||pts)},'${r.week_start||''}','${r.week_end||''}')">✏️</button>
                 <button class="delete" onclick="deleteRanking('${r.id}')">🗑️</button>
             </td>`;
