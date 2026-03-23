@@ -120,7 +120,18 @@
             <div><p style="color:var(--text-muted);font-size:13px;">USDTO</p><p id="admin-usdto-value" style="font-size:18px;font-weight:600;">$0.00</p></div>
             <div><p style="color:var(--text-muted);font-size:13px;">Redução Empréstimo</p><p id="admin-loan-reduction" style="font-size:18px;font-weight:600;color:#22c55e;">$0.00</p></div>
           </div></div>
-          <div class="glass-card" style="padding:16px;"><p style="color:var(--text-secondary);font-size:13px;">Última atualização: <span id="aave-last-updated">-</span></p></div>
+          <div class="glass-card" style="padding:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <p style="color:var(--text-secondary);font-size:13px;">Última atualização: <span id="aave-last-updated">-</span></p>
+            <button id="edit-aave-btn" class="neon-btn" style="font-size:13px;padding:8px 16px;" onclick="openEditAaveModal()">✏️ Editar Dados</button>
+          </div>
+          <!-- Tabela de histórico AAVE por mês -->
+          <div class="glass-card" style="padding:20px;margin-top:16px;">
+            <h4 style="margin-bottom:16px;color:var(--neon-purple,#a855f7);">📊 Histórico por Mês</h4>
+            <div class="data-table-container"><table class="data-table">
+              <thead><tr><th>Mês</th><th>WETH</th><th>USDTO</th><th>Patrim. Líquido</th><th>Atualizado</th><th>Ações</th></tr></thead>
+              <tbody id="aave-history-table"><tr><td colspan="6" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr></tbody>
+            </table></div>
+          </div>
         </div>
         <p id="aave-no-data" style="text-align:center;color:var(--text-secondary);padding:40px;display:none;">Selecione um usuário.</p>
       </div>
@@ -223,6 +234,23 @@
     <hr style="border-color:var(--border-glass);margin:8px 0;">
     <div class="form-group"><label>Valor Emprestado Total (USD) *</label><input type="number" id="aave-borrow-input" step="0.01" min="0" required placeholder="Ex: 73.15"></div>
     <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('add-aave-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
+  </form>
+</div></div>
+
+<!-- Modal Editar AAVE -->
+<div class="modal-overlay" id="edit-aave-modal"><div class="modal"><h3>✏️ Editar Dados AAVE</h3>
+  <form id="edit-aave-form">
+    <input type="hidden" id="edit-aave-id">
+    <input type="hidden" id="edit-aave-user-id">
+    <div class="form-group"><label>Usuário</label><input type="text" id="edit-aave-username" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
+    <div class="form-group"><label>Mês</label><input type="text" id="edit-aave-month" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
+    <hr style="border-color:var(--border-glass);margin:8px 0;">
+    <div class="form-group"><label>WETH (USD) *</label><input type="number" id="edit-aave-weth" step="0.01" min="0" required placeholder="Ex: 219.43"></div>
+    <div class="form-group"><label>USDTO — Empréstimo (USD) *</label><input type="number" id="edit-aave-usdto" step="0.01" min="0" required placeholder="Ex: 73.15"></div>
+    <div class="form-group"><label>Redução do Empréstimo (USD)</label><input type="number" id="edit-aave-loan-reduction" step="0.01" min="0" placeholder="Ex: 0.00"></div>
+    <hr style="border-color:var(--border-glass);margin:8px 0;">
+    <div class="form-group"><label>Valor Emprestado Total (USD) *</label><input type="number" id="edit-aave-borrow" step="0.01" min="0" required placeholder="Ex: 73.15"></div>
+    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('edit-aave-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
   </form>
 </div></div>
 

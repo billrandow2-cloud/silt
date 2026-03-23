@@ -19,8 +19,8 @@
                 <ul class="nav-links">
                     <li><a href="dashboard.html" class="active">Dashboard</a></li>
                     <li><a href="#" onclick="showSection('pools')">Pools</a></li>
-                    <li><a href="#" onclick="showSection('aave')">AAVE</a></li>
-                    <li><a href="admin.html" class="active">ADMIN</a></li>
+                    <li id="nav-aave"><a href="#" onclick="showSection('aave')">AAVE</a></li>
+                    <li id="nav-admin"><a href="admin.html">ADMIN</a></li>
                     <li><a href="#" onclick="logout()">Sair</a></li>
                 </ul>
             </nav>
@@ -45,7 +45,7 @@
         <div class="nav-tabs">
             <button class="active" onclick="showSection('overview')" data-section="overview"><span>📊</span> Visão Geral</button>
             <button onclick="showSection('pools')"   data-section="pools"><span>💰</span> Pools</button>
-            <button onclick="showSection('aave')"    data-section="aave"><span>🏦</span> AAVE</button>
+            <button id="tab-aave" onclick="showSection('aave')" data-section="aave"><span>🏦</span> AAVE</button>
         </div>
 
         <div class="section-content">

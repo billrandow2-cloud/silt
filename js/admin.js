@@ -259,6 +259,8 @@ async function deletePool(poolId) {
 // =====================================================
 // AAVE
 // =====================================================
+let allAaveDataAdmin = []; // armazenar todos os dados AAVE do usuário selecionado
+
 async function loadUserAave() {
     const userId  = document.getElementById('aave-user-filter').value;
     const month   = document.getElementById('aave-month-filter-admin').value;
@@ -266,16 +268,146 @@ async function loadUserAave() {
     const noData  = document.getElementById('aave-no-data');
     if (!userId) { display.style.display='none'; if(noData) noData.style.display='none'; return; }
     showLoading(true);
-    let query = supabaseAdmin.from('aave_data').select('*').eq('user_id', userId).order('updated_at', { ascending: false });
-    if (month) query = query.eq('month', month); else query = query.limit(1);
+    let query = supabaseAdmin.from('aave_data').select('*, users(username)').eq('user_id', userId).order('updated_at', { ascending: false });
+    if (month) query = query.eq('month', month); else query = query.limit(20);
     const { data: rows, error } = await query; showLoading(false);
+
+    allAaveDataAdmin = rows || [];
     const data = rows?.[0] || null;
-    if (error || !data) { display.style.display='none'; if(noData) noData.style.display='block'; return; }
+
+    if (error || !data) {
+        display.style.display='none';
+        if(noData) { noData.style.display='block'; noData.textContent='Nenhum dado AAVE encontrado para este usuário.'; }
+        renderAaveHistoryTable([]);
+        return;
+    }
+
     display.style.display='block'; if(noData) noData.style.display='none';
+
+    // Armazenar dados para edição
+    display.dataset.currentId = data.id;
+    display.dataset.currentUserId = userId;
+    display.dataset.currentUsername = data.users?.username || '';
+
     const f=v=>'$'+(parseFloat(v)||0).toLocaleString('en-US',{minimumFractionDigits:2});
     const bal=parseFloat(data.aave_balance)||0, bor=parseFloat(data.borrow_value)||0;
-    document.getElementById('admin-aave-balance').textContent=f(bal); document.getElementById('admin-borrow-value').textContent=f(bor); document.getElementById('admin-net-value').textContent=f(bal-bor); document.getElementById('admin-weth-value').textContent=f(data.weth_value); document.getElementById('admin-usdto-value').textContent=f(data.usdto_value); document.getElementById('admin-loan-reduction').textContent=f(data.loan_reduction);
+    document.getElementById('admin-aave-balance').textContent=f(bal);
+    document.getElementById('admin-borrow-value').textContent=f(bor);
+    document.getElementById('admin-net-value').textContent=f(bal-bor);
+    document.getElementById('admin-weth-value').textContent=f(data.weth_value);
+    document.getElementById('admin-usdto-value').textContent=f(data.usdto_value);
+    document.getElementById('admin-loan-reduction').textContent=f(data.loan_reduction);
     document.getElementById('aave-last-updated').textContent=new Date(data.updated_at).toLocaleString('pt-BR')+(data.month?` — ${data.month}`:'');
+
+    // Renderizar tabela de histórico
+    renderAaveHistoryTable(allAaveDataAdmin);
+}
+
+function renderAaveHistoryTable(data) {
+    const tbody = document.getElementById('aave-history-table');
+    tbody.innerHTML = '';
+
+    if (!data?.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-secondary);">Nenhum dado encontrado</td></tr>';
+        return;
+    }
+
+    data.forEach(row => {
+        const weth = parseFloat(row.weth_value || 0);
+        const usdto = parseFloat(row.usdto_value || 0);
+        const net = weth - usdto;
+        const f = v => '$' + (parseFloat(v)||0).toLocaleString('en-US', {minimumFractionDigits: 2});
+        const ff = v => v.toLocaleString('en-US', {minimumFractionDigits: 2});
+        const updated = row.updated_at ? new Date(row.updated_at).toLocaleDateString('pt-BR') : '-';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span style="font-weight:600;">${row.month || '-'}</span></td>
+            <td>${f(weth)}</td>
+            <td style="color:#ef4444;">${f(usdto)}</td>
+            <td style="color:${net>=0?'#22c55e':'#ef4444'};font-weight:600;">${f(net)}</td>
+            <td style="font-size:12px;color:var(--text-muted);">${updated}</td>
+            <td class="actions" style="display:flex;gap:6px;align-items:center;">
+                <button class="edit" onclick="openEditAaveModalById('${row.id}')" title="Editar">✏️</button>
+                <button class="delete" onclick="deleteAaveData('${row.id}')" title="Excluir">🗑️</button>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function openEditAaveModal() {
+    const display = document.getElementById('aave-data-display');
+    const id = display.dataset.currentId;
+    if (!id) { showToast('Selecione um registro primeiro.', 'error'); return; }
+    openEditAaveModalById(id);
+}
+
+async function openEditAaveModalById(recordId) {
+    showLoading(true);
+    const { data: row, error } = await supabaseAdmin.from('aave_data').select('*, users(username)').eq('id', recordId).single();
+    showLoading(false);
+    if (error || !row) { showToast('Erro ao carregar dados.', 'error'); return; }
+
+    document.getElementById('edit-aave-id').value = row.id;
+    document.getElementById('edit-aave-user-id').value = row.user_id;
+    document.getElementById('edit-aave-username').value = row.users?.username || '-';
+    document.getElementById('edit-aave-month').value = row.month || '-';
+    document.getElementById('edit-aave-weth').value = parseFloat(row.weth_value || 0).toFixed(2);
+    document.getElementById('edit-aave-usdto').value = parseFloat(row.usdto_value || 0).toFixed(2);
+    document.getElementById('edit-aave-loan-reduction').value = parseFloat(row.loan_reduction || 0).toFixed(2);
+    document.getElementById('edit-aave-borrow').value = parseFloat(row.borrow_value || 0).toFixed(2);
+
+    openModal('edit-aave-modal');
+}
+
+document.getElementById('edit-aave-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('edit-aave-id').value;
+    const userId = document.getElementById('edit-aave-user-id').value;
+    const weth = parseFloat(document.getElementById('edit-aave-weth').value) || 0;
+    const usdto = parseFloat(document.getElementById('edit-aave-usdto').value) || 0;
+    const loanRed = parseFloat(document.getElementById('edit-aave-loan-reduction').value) || 0;
+    const borrow = parseFloat(document.getElementById('edit-aave-borrow').value) || 0;
+
+    showLoading(true);
+    const payload = {
+        aave_balance: weth + loanRed,
+        borrow_value: borrow,
+        weth_value: weth,
+        usdto_value: usdto,
+        loan_reduction: loanRed,
+        updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabaseAdmin.from('aave_data').update(payload).eq('id', id);
+    if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
+
+    showToast('AAVE atualizado!', 'success');
+    closeModal('edit-aave-modal');
+
+    if (document.getElementById('aave-user-filter').value === userId) {
+        await loadUserAave();
+    }
+    showLoading(false);
+});
+
+async function deleteAaveData(recordId) {
+    if (!confirm('Excluir este registro AAVE?')) return;
+    showLoading(true);
+
+    const { data: row } = await supabaseAdmin.from('aave_data').select('user_id').eq('id', recordId).single();
+    const userId = row?.user_id;
+
+    const { error } = await supabaseAdmin.from('aave_data').delete().eq('id', recordId);
+    if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
+
+    showToast('Registro excluído!', 'success');
+
+    if (userId && document.getElementById('aave-user-filter').value === userId) {
+        await loadUserAave();
+    } else {
+        showLoading(false);
+    }
 }
 
 document.getElementById('add-aave-form')?.addEventListener('submit', async (e) => {

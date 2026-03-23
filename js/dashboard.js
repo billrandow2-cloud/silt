@@ -48,6 +48,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('user-name').textContent   = currentUsername;
     document.getElementById('user-avatar').textContent = currentUsername.charAt(0).toUpperCase();
 
+    // ── Verificar permissão admin para mostrar/esconder botão ADMIN ──────
+    const navAdmin = document.getElementById('nav-admin');
+    if (navAdmin) {
+        if (isAdminView) {
+            // Se está visualizando como admin, sempre mostrar
+            navAdmin.style.display = 'list-item';
+        } else {
+            // Verificar se o usuário atual tem permissão de admin
+            const { data: permData } = await supabaseClient.from('permissions').select('role').eq('username', currentUsername).single();
+            if (permData?.role === 'admin') {
+                navAdmin.style.display = 'list-item';
+            } else {
+                navAdmin.style.display = 'none';
+            }
+        }
+    }
+
     // Banner modo visualização
     if (isAdminView) {
         const banner = document.createElement('div');
@@ -59,6 +76,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadExchangeRate();
     await loadDashboardData(targetUserId);
+
+    // ── Mostrar/esconder aba AAVE baseado em dados ──────────────────────────
+    updateAaveTabVisibility();
 
     document.getElementById('loading').style.display = 'none';
     switchCurrency(localStorage.getItem('silt_currency') || 'USD');
@@ -369,4 +389,27 @@ function showSection(s) {
     document.querySelectorAll('.nav-tabs button').forEach(function(b){b.classList.toggle('active',b.dataset.section===s);});
     document.querySelectorAll('.section').forEach(function(x){x.classList.toggle('active',x.id===s+'-section');});
 }
+
+// ── Mostrar/esconder aba AAVE baseado em dados do usuário ───────────────────
+function updateAaveTabVisibility() {
+    const tabAave = document.getElementById('tab-aave');
+    const navAave = document.getElementById('nav-aave');
+    const hasAaveData = allAaveData && allAaveData.length > 0;
+
+    if (tabAave) {
+        tabAave.style.display = hasAaveData ? 'inline-flex' : 'none';
+    }
+    if (navAave) {
+        navAave.style.display = hasAaveData ? 'list-item' : 'none';
+    }
+
+    // Se não tem dados AAVE e está na seção AAVE, voltar para overview
+    if (!hasAaveData) {
+        const aaveSection = document.getElementById('aave-section');
+        if (aaveSection && aaveSection.classList.contains('active')) {
+            showSection('overview');
+        }
+    }
+}
+
 async function logout() { await supabaseClient.auth.signOut(); localStorage.clear(); window.location.href='login.html'; }
