@@ -310,9 +310,16 @@ function initMonthsGrid() {
             card.innerHTML='<h3>'+month+'</h3><p class="month-stats" style="color:var(--text-muted);">Sem dados</p>';
             grid.appendChild(card); return;
         }
-        var totalProfit=0; mp.forEach(function(p){ totalProfit+=parseFloat(p.profit_value||0); });
+        // usa apenas a ÚLTIMA semana para não inflar somando semanas anteriores
+        var latestWeek   = getLatestWeekForMonth(month);
+        var latestData   = getLatestWeekData(month);
+        var latestProfit = 0;
+        latestData.forEach(function(p){ latestProfit += parseFloat(p.profit_value||0); });
         card.onclick = function() { showMonth(month); };
-        card.innerHTML = '<h3>'+month+'</h3><p class="month-stats">'+fmt(getPoolsValueForMonth(month))+'</p><span style="color:var(--success);font-size:14px;">✓ Lucro: '+fmt(totalProfit)+'</span>';
+        card.innerHTML = '<h3>'+month+'</h3>'
+            +'<p class="month-stats">'+fmt(getPoolsValueForMonth(month))+'</p>'
+            +'<span style="color:var(--success);font-size:14px;">✓ Lucro: '+fmt(latestProfit)+'</span>'
+            +(latestWeek ? '<span style="color:var(--text-muted);font-size:11px;display:block;margin-top:3px;">📌 '+latestWeek+'</span>' : '');
         grid.appendChild(card);
     });
 }

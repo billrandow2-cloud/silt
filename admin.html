@@ -73,7 +73,11 @@
       <!-- POOLS — filtros melhorados -->
       <div id="admin-pools" class="admin-section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px;">
-          <h2>Gerenciar Dados de Pools</h2><button class="neon-btn" onclick="openModal('add-pool-modal')">+ Adicionar Dados</button>
+          <h2>Gerenciar Dados de Pools</h2>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="outline-btn" onclick="openCopyWeekModal()" style="display:flex;align-items:center;gap:6px;">📋 Copiar Semana</button>
+            <button class="neon-btn" onclick="openModal('add-pool-modal')">+ Adicionar Dados</button>
+          </div>
         </div>
         <!-- Filtros em grid -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
@@ -190,6 +194,70 @@
     <hr style="border-color:var(--border-glass);margin:16px 0;">
     <div class="form-group"><label>Enviar redefinição de senha</label><input type="password" id="cred-password" placeholder="Digite qualquer coisa para disparar o email"><small style="color:var(--text-muted);font-size:12px;">Um link de redefinição será enviado ao email do usuário.</small></div>
     <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('edit-credentials-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
+  </form>
+</div></div>
+
+<!-- Modal: Copiar Semana Inteira -->
+<div class="modal-overlay" id="copy-week-modal"><div class="modal"><h3>📋 Copiar Semana Inteira</h3>
+  <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">
+    Copia todas as pools de uma semana para outra. O <strong>Valor Atual</strong> da origem vira o <strong>Valor Inicial</strong> do destino.
+  </p>
+  <form id="copy-week-form">
+    <!-- ORIGEM -->
+    <p style="font-size:12px;font-weight:700;color:var(--neon-purple,#a855f7);letter-spacing:.06em;margin-bottom:10px;text-transform:uppercase;">Origem</p>
+    <div class="form-group"><label>Usuário *</label>
+      <select id="cw-src-user" required onchange="previewCopyWeek()"><option value="">Selecione...</option></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label>Mês *</label>
+        <select id="cw-src-month" required onchange="previewCopyWeek()">
+          <option value="">Selecione...</option>
+          <option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option>
+          <option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option>
+          <option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Semana *</label>
+        <select id="cw-src-week" required onchange="previewCopyWeek()">
+          <option value="">Selecione...</option>
+          <option>Semana 1</option><option>Semana 2</option><option>Semana 3</option>
+          <option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option>
+        </select>
+      </div>
+    </div>
+    <hr style="border-color:var(--border-glass);margin:12px 0;">
+    <!-- DESTINO -->
+    <p style="font-size:12px;font-weight:700;color:#22c55e;letter-spacing:.06em;margin-bottom:10px;text-transform:uppercase;">Destino</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-group"><label>Mês *</label>
+        <select id="cw-dst-month" required>
+          <option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option>
+          <option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option>
+          <option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Semana *</label>
+        <select id="cw-dst-week" required>
+          <option value="">Selecione...</option>
+          <option>Semana 1</option><option>Semana 2</option><option>Semana 3</option>
+          <option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option>
+        </select>
+      </div>
+    </div>
+    <hr style="border-color:var(--border-glass);margin:12px 0;">
+    <!-- OPÇÕES -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px;background:rgba(168,85,247,0.08);border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
+      <input type="checkbox" id="cw-zero-profit" checked onchange="previewCopyWeek()" style="width:16px;height:16px;cursor:pointer;">
+      <label for="cw-zero-profit" style="cursor:pointer;font-size:14px;">
+        Zerar lucro e rendimento <span style="color:var(--text-muted);font-size:12px;">(recomendado para nova semana)</span>
+      </label>
+    </div>
+    <!-- PREVIEW -->
+    <div id="cw-preview" style="background:rgba(255,255,255,0.03);border:1px solid var(--border-glass);border-radius:10px;padding:14px;min-height:60px;margin-bottom:16px;"></div>
+    <div class="modal-actions">
+      <button type="button" class="outline-btn" onclick="closeModal('copy-week-modal')">Cancelar</button>
+      <button type="submit" class="neon-btn">✅ Copiar Semana</button>
+    </div>
   </form>
 </div></div>
 

@@ -77,7 +77,7 @@ function renderUsersTable() {
 }
 
 function populateUserSelects() {
-    ['pool-user','aave-user','pool-user-filter','aave-user-filter'].forEach(id => {
+    ['pool-user','aave-user','pool-user-filter','aave-user-filter','cw-src-user'].forEach(id => {
         const sel = document.getElementById(id); if (!sel) return;
         const first = sel.options[0]; sel.innerHTML = ''; sel.appendChild(first);
         allUsers.forEach(u => { const o = document.createElement('option'); o.value = u.id; o.textContent = u.username; sel.appendChild(o); });
@@ -577,3 +577,98 @@ function showToast(msg,type='info') {
 }
 function logout() { supabaseAdmin.auth.signOut(); localStorage.clear(); window.location.href='login.html'; }
 document.addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('active'); });
+
+// ─── COPIAR SEMANA INTEIRA ─────────────────────────────
+async function openCopyWeekModal() {
+    const fu = document.getElementById('pool-user-filter')?.value || '';
+    const fm = document.getElementById('pool-month-filter')?.value || '';
+    const fw = document.getElementById('pool-week-filter')?.value  || '';
+    if (fu) document.getElementById('cw-src-user').value  = fu;
+    if (fm) document.getElementById('cw-src-month').value = fm;
+    if (fw) document.getElementById('cw-src-week').value  = fw;
+    document.getElementById('cw-dst-month').value = fm || 'Janeiro';
+    document.getElementById('cw-dst-week').value  = '';
+    document.getElementById('cw-zero-profit').checked = true;
+    document.getElementById('cw-preview').innerHTML = '';
+    openModal('copy-week-modal');
+    await previewCopyWeek();
+}
+
+async function previewCopyWeek() {
+    const userId = document.getElementById('cw-src-user').value;
+    const month  = document.getElementById('cw-src-month').value;
+    const week   = document.getElementById('cw-src-week').value;
+    const box    = document.getElementById('cw-preview');
+    if (!userId || !month || !week) {
+        box.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecione usuário, mês e semana de origem.</p>';
+        return;
+    }
+    const { data, error } = await supabaseAdmin.from('pool_data').select('pool_name,initial_value,current_value,contribution_value,profit_value').eq('user_id',userId).eq('month',month).eq('week',week);
+    if (error || !data?.length) {
+        box.innerHTML = '<p style="color:#ef4444;font-size:13px;">Nenhuma pool encontrada para essa seleção.</p>';
+        return;
+    }
+    const zero = document.getElementById('cw-zero-profit').checked;
+    const rows = data.map(p => {
+        const newIni = parseFloat(p.current_value||0) > 0
+            ? parseFloat(p.current_value)
+            : parseFloat(p.initial_value||0)+parseFloat(p.contribution_value||0)+parseFloat(p.profit_value||0);
+        return `<tr><td style="padding:6px 8px;">${p.pool_name}</td>`
+            +`<td style="padding:6px 8px;color:#a855f7;">$${newIni.toFixed(2)}</td>`
+            +`<td style="padding:6px 8px;color:${zero?'#ef4444':'#22c55e'};">${zero?'zerado':'mantido'}</td></tr>`;
+    }).join('');
+    box.innerHTML = `<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">📋 ${data.length} pool(s) serão copiadas:</p>`
+        +`<table style="width:100%;font-size:13px;"><thead><tr>`
+        +`<th style="padding:6px 8px;text-align:left;color:var(--text-muted);">Pool</th>`
+        +`<th style="padding:6px 8px;text-align:left;color:var(--text-muted);">Novo Inicial</th>`
+        +`<th style="padding:6px 8px;text-align:left;color:var(--text-muted);">Lucro</th>`
+        +`</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+document.getElementById('copy-week-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const userId   = document.getElementById('cw-src-user').value;
+    const srcMonth = document.getElementById('cw-src-month').value;
+    const srcWeek  = document.getElementById('cw-src-week').value;
+    const dstMonth = document.getElementById('cw-dst-month').value;
+    const dstWeek  = document.getElementById('cw-dst-week').value;
+    const zeroProfit = document.getElementById('cw-zero-profit').checked;
+
+    if (!userId||!srcMonth||!srcWeek||!dstMonth||!dstWeek) { showToast('Preencha todos os campos.','error'); return; }
+    if (srcMonth===dstMonth && srcWeek===dstWeek) { showToast('Origem e destino são iguais!','error'); return; }
+
+    showLoading(true);
+    const { data: pools, error } = await supabaseAdmin.from('pool_data').select('*').eq('user_id',userId).eq('month',srcMonth).eq('week',srcWeek);
+    if (error || !pools?.length) { showToast('Nenhuma pool encontrada na origem.','error'); showLoading(false); return; }
+
+    const inserts = pools.map(p => {
+        // O current_value da semana anterior vira o initial_value da nova
+        const newInitial = parseFloat(p.current_value||0) > 0
+            ? parseFloat(p.current_value)
+            : parseFloat(p.initial_value||0) + parseFloat(p.contribution_value||0) + parseFloat(p.profit_value||0);
+        return {
+            user_id:            p.user_id,
+            month:              dstMonth,
+            week:               dstWeek,
+            pool_name:          p.pool_name,
+            initial_value:      newInitial,
+            invested_value:     newInitial,
+            yield_percent:      zeroProfit ? 0 : (p.yield_percent||0),
+            contribution_value: 0,
+            profit_value:       zeroProfit ? 0 : (p.profit_value||0),
+            current_value:      0,
+            created_at:         new Date().toISOString()
+        };
+    });
+
+    const { error: ie } = await supabaseAdmin.from('pool_data').insert(inserts);
+    if (ie) { showToast('Erro ao inserir: '+ie.message,'error'); showLoading(false); return; }
+
+    showToast(`✅ ${inserts.length} pool(s) copiadas para ${dstMonth} / ${dstWeek}!`,'success');
+    closeModal('copy-week-modal');
+    document.getElementById('pool-user-filter').value  = userId;
+    document.getElementById('pool-month-filter').value = dstMonth;
+    document.getElementById('pool-week-filter').value  = dstWeek;
+    await loadUserPools();
+    showLoading(false);
+});
