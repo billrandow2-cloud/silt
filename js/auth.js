@@ -99,6 +99,23 @@ async function redirectBasedOnRole(user) {
             isAdmin: isAdmin
         }));
 
+        // Verificar se há mensagem de boas-vindas ativa para este usuário
+        // Admins não veem mensagens de boas-vindas
+        if (!isAdmin) {
+            const { data: messageData } = await supabaseAuth
+                .from('user_messages')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('active', true)
+                .single();
+
+            // Se há mensagem ativa, redirecionar para welcome.html
+            if (messageData) {
+                window.location.href = 'welcome.html';
+                return;
+            }
+        }
+
         window.location.href = isAdmin ? 'admin.html' : 'dashboard.html';
 
     } catch (err) {

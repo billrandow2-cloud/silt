@@ -160,6 +160,27 @@
         </table></div>
       </div>
 
+      <!-- MENSAGENS DE BOAS-VINDAS -->
+      <div id="admin-messages" class="admin-section">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:16px;">
+          <h2>💬 Mensagens de Boas-Vindas</h2>
+          <button class="neon-btn" onclick="openModal('add-message-modal')">+ Nova Mensagem</button>
+        </div>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Configure mensagens personalizadas que aparecerão para cada usuário após o login.</p>
+
+        <!-- Lista de mensagens -->
+        <div class="data-table-container">
+          <table class="data-table">
+            <thead>
+              <tr><th>Usuário</th><th>Mensagem</th><th>Status</th><th>Ações</th></tr>
+            </thead>
+            <tbody id="messages-table-body">
+              <tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -377,6 +398,58 @@
         </div>
         <div class="modal-actions">
             <button type="button" class="outline-btn" onclick="closeModal('edit-share-modal')">Cancelar</button>
+            <button type="submit" class="neon-btn">Salvar</button>
+        </div>
+    </form>
+</div></div>
+
+<!-- Modal: Nova Mensagem de Boas-Vindas -->
+<div class="modal-overlay" id="add-message-modal"><div class="modal">
+    <h3>💬 Nova Mensagem de Boas-Vindas</h3>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">
+        Esta mensagem será exibida para o usuário após o login.
+    </p>
+    <form id="add-message-form">
+        <div class="form-group">
+            <label>Usuário *</label>
+            <select id="message-user" required>
+                <option value="">Selecione...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Mensagem *</label>
+            <textarea id="message-text" required placeholder="Digite a mensagem de boas-vindas..." style="width:100%;min-height:120px;padding:12px;background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);border-radius:10px;color:var(--text-primary);font-size:14px;resize:vertical;font-family:inherit;"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px;background:rgba(168,85,247,0.08);border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
+            <input type="checkbox" id="message-active" checked style="width:18px;height:18px;cursor:pointer;">
+            <label for="message-active" style="cursor:pointer;font-size:14px;">Mensagem ativa (exibir após login)</label>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="outline-btn" onclick="closeModal('add-message-modal')">Cancelar</button>
+            <button type="submit" class="neon-btn">Salvar</button>
+        </div>
+    </form>
+</div></div>
+
+<!-- Modal: Editar Mensagem de Boas-Vindas -->
+<div class="modal-overlay" id="edit-message-modal"><div class="modal">
+    <h3>✏️ Editar Mensagem</h3>
+    <form id="edit-message-form">
+        <input type="hidden" id="edit-message-id">
+        <div class="form-group">
+            <label>Usuário</label>
+            <input type="text" id="edit-message-username" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);">
+        </div>
+        <div class="form-group">
+            <label>Mensagem *</label>
+            <textarea id="edit-message-text" required style="width:100%;min-height:120px;padding:12px;background:rgba(255,255,255,0.05);border:1px solid var(--border-glass);border-radius:10px;color:var(--text-primary);font-size:14px;resize:vertical;font-family:inherit;"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px;background:rgba(168,85,247,0.08);border-radius:10px;border:1px solid rgba(168,85,247,0.2);">
+            <input type="checkbox" id="edit-message-active" style="width:18px;height:18px;cursor:pointer;">
+            <label for="edit-message-active" style="cursor:pointer;font-size:14px;">Mensagem ativa</label>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="outline-btn" onclick="closeModal('edit-message-modal')">Cancelar</button>
             <button type="submit" class="neon-btn">Salvar</button>
         </div>
     </form>

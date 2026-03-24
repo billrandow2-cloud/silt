@@ -21,8 +21,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
     document.getElementById('admin-avatar').textContent = username.charAt(0).toUpperCase();
-    await loadUsers();
+    await loadUsers();          // popula allUsers primeiro
     await loadRankingAdmin();
+    await loadUserMessages();   // usa allUsers já preenchido
 });
 
 // =====================================================
@@ -77,7 +78,7 @@ function renderUsersTable() {
 }
 
 function populateUserSelects() {
-    ['pool-user','aave-user','pool-user-filter','aave-user-filter'].forEach(id => {
+    ['pool-user','aave-user','pool-user-filter','aave-user-filter','cw-src-user','message-user'].forEach(id => {
         const sel = document.getElementById(id); if (!sel) return;
         const first = sel.options[0]; sel.innerHTML = ''; sel.appendChild(first);
         allUsers.forEach(u => { const o = document.createElement('option'); o.value = u.id; o.textContent = u.username; sel.appendChild(o); });
@@ -577,3 +578,282 @@ function showToast(msg,type='info') {
 }
 function logout() { supabaseAdmin.auth.signOut(); localStorage.clear(); window.location.href='login.html'; }
 document.addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('active'); });
+
+// ─── COPIAR SEMANA INTEIRA ─────────────────────────────
+async function openCopyWeekModal() {
+    const fu = document.getElementById('pool-user-filter')?.value || '';
+    const fm = document.getElementById('pool-month-filter')?.value || '';
+    const fw = document.getElementById('pool-week-filter')?.value  || '';
+    if (fu) document.getElementById('cw-src-user').value  = fu;
+    if (fm) document.getElementById('cw-src-month').value = fm;
+    if (fw) document.getElementById('cw-src-week').value  = fw;
+    document.getElementById('cw-dst-month').value = fm || 'Janeiro';
+    document.getElementById('cw-dst-week').value  = '';
+    document.getElementById('cw-zero-profit').checked = true;
+    document.getElementById('cw-preview').innerHTML = '';
+    openModal('copy-week-modal');
+    await previewCopyWeek();
+}
+
+async function previewCopyWeek() {
+    const userId = document.getElementById('cw-src-user').value;
+    const month  = document.getElementById('cw-src-month').value;
+    const week   = document.getElementById('cw-src-week').value;
+    const box    = document.getElementById('cw-preview');
+    if (!userId || !month || !week) {
+        box.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecione usuário, mês e semana de origem.</p>';
+        return;
+    }
+    const { data, error } = await supabaseAdmin.from('pool_data').select('pool_name,initial_value,current_value,contribution_value,profit_value').eq('user_id',userId).eq('month',month).eq('week',week);
+    if (error || !data?.length) {
+        box.innerHTML = '<p style="color:#ef4444;font-size:13px;">Nenhuma pool encontrada para essa seleção.</p>';
+        return;
+    }
+    const zero = document.getElementById('cw-zero-profit').checked;
+    const rows = data.map(p => {
+        const newIni = parseFloat(p.current_value||0) > 0
+            ? parseFloat(p.current_value)
+            : parseFloat(p.initial_value||0)+parseFloat(p.contribution_value||0)+parseFloat(p.profit_value||0);
+        return `<tr><td style="padding:6px 8px;">${p.pool_name}</td>`
+            +`<td style="padding:6px 8px;color:#a855f7;">$${newIni.toFixed(2)}</td>`
+            +`<td style="padding:6px 8px;color:${zero?'#ef4444':'#22c55e'};">${zero?'zerado':'mantido'}</td></tr>`;
+    }).join('');
+    box.innerHTML = `<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">📋 ${data.length} pool(s) serão copiadas:</p>`
+        +`<table style="width:100%;font-size:13px;"><thead><tr>`
+        +`<th style="padding:6px 8px;text-align:left;color:var(--text-muted);">Pool</th>`
+        +`<th style="padding:6px 8px;text-align:left;color:var(--text-muted);">Novo Inicial</th>`
+        +`<th style="padding:6px 8px;text-align:left;color:var(--text-muted);">Lucro</th>`
+        +`</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+document.getElementById('copy-week-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const userId   = document.getElementById('cw-src-user').value;
+    const srcMonth = document.getElementById('cw-src-month').value;
+    const srcWeek  = document.getElementById('cw-src-week').value;
+    const dstMonth = document.getElementById('cw-dst-month').value;
+    const dstWeek  = document.getElementById('cw-dst-week').value;
+    const zeroProfit = document.getElementById('cw-zero-profit').checked;
+
+    if (!userId||!srcMonth||!srcWeek||!dstMonth||!dstWeek) { showToast('Preencha todos os campos.','error'); return; }
+    if (srcMonth===dstMonth && srcWeek===dstWeek) { showToast('Origem e destino são iguais!','error'); return; }
+
+    showLoading(true);
+    const { data: pools, error } = await supabaseAdmin.from('pool_data').select('*').eq('user_id',userId).eq('month',srcMonth).eq('week',srcWeek);
+    if (error || !pools?.length) { showToast('Nenhuma pool encontrada na origem.','error'); showLoading(false); return; }
+
+    const inserts = pools.map(p => {
+        // O current_value da semana anterior vira o initial_value da nova
+        const newInitial = parseFloat(p.current_value||0) > 0
+            ? parseFloat(p.current_value)
+            : parseFloat(p.initial_value||0) + parseFloat(p.contribution_value||0) + parseFloat(p.profit_value||0);
+        return {
+            user_id:            p.user_id,
+            month:              dstMonth,
+            week:               dstWeek,
+            pool_name:          p.pool_name,
+            initial_value:      newInitial,
+            invested_value:     newInitial,
+            yield_percent:      zeroProfit ? 0 : (p.yield_percent||0),
+            contribution_value: 0,
+            profit_value:       zeroProfit ? 0 : (p.profit_value||0),
+            current_value:      0,
+            created_at:         new Date().toISOString()
+        };
+    });
+
+    const { error: ie } = await supabaseAdmin.from('pool_data').insert(inserts);
+    if (ie) { showToast('Erro ao inserir: '+ie.message,'error'); showLoading(false); return; }
+
+    showToast(`✅ ${inserts.length} pool(s) copiadas para ${dstMonth} / ${dstWeek}!`,'success');
+    closeModal('copy-week-modal');
+    document.getElementById('pool-user-filter').value  = userId;
+    document.getElementById('pool-month-filter').value = dstMonth;
+    document.getElementById('pool-week-filter').value  = dstWeek;
+    await loadUserPools();
+    showLoading(false);
+});
+
+// =====================================================
+// MENSAGENS DE BOAS-VINDAS
+// =====================================================
+async function loadUserMessages() {
+    const tbody = document.getElementById('messages-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr>';
+
+    let data, error;
+    try {
+        const res = await supabaseAdmin
+            .from('user_messages')
+            .select('id, user_id, message, active, created_at')
+            .order('created_at', { ascending: false });
+        data  = res.data;
+        error = res.error;
+    } catch (ex) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#ef4444;">Erro inesperado: ' + ex.message + '</td></tr>';
+        return;
+    }
+
+    if (error) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#ef4444;">Erro: ' + error.message + '</td></tr>';
+        return;
+    }
+
+    if (!data || !data.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">Nenhuma mensagem configurada.</td></tr>';
+        return;
+    }
+
+    // Usar allUsers já carregado (evita query extra e problemas de RLS)
+    const userMap = {};
+    (allUsers || []).forEach(u => { userMap[u.id] = u.username; });
+
+    tbody.innerHTML = '';
+    data.forEach(msg => {
+        const username = userMap[msg.user_id] || '—';
+        const active = msg.active;
+        const preview = msg.message.length > 80 ? msg.message.substring(0, 80) + '…' : msg.message;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-weight:600;color:var(--neon-purple,#a855f7);">${username}</td>
+            <td style="font-size:13px;color:var(--text-secondary);max-width:320px;">${preview}</td>
+            <td>
+                <span style="padding:4px 12px;border-radius:20px;font-size:12px;
+                    background:${active ? 'rgba(34,197,94,0.2)' : 'rgba(156,163,175,0.2)'};
+                    color:${active ? '#22c55e' : '#9ca3af'};">
+                    ${active ? '✅ Ativa' : '⏸ Inativa'}
+                </span>
+            </td>
+            <td class="actions" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+                <button onclick="toggleMessage('${msg.id}', ${!active})" title="${active ? 'Desativar' : 'Ativar'}"
+                    style="background:rgba(59,130,246,0.15);color:#3b82f6;border-radius:6px;padding:6px;border:none;cursor:pointer;font-size:14px;">
+                    ${active ? '⏸' : '▶️'}
+                </button>
+                <button class="edit" onclick="openEditMessage('${msg.id}', \`${escapeForAttr(msg.message)}\`, ${active})" title="Editar">✏️</button>
+                <button class="delete" onclick="deleteMessage('${msg.id}')" title="Excluir">🗑️</button>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function escapeForAttr(str) {
+    return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+}
+
+document.getElementById('add-message-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const userId  = document.getElementById('message-user').value;
+    const message = document.getElementById('message-text').value.trim();
+    const active  = document.getElementById('message-active').checked;
+
+    if (!userId || !message) { showToast('Preencha todos os campos.', 'error'); return; }
+
+    showLoading(true);
+
+    // Upsert: se já existe mensagem para este usuário, atualiza; senão, insere
+    const { data: existing } = await supabaseAdmin
+        .from('user_messages')
+        .select('id')
+        .eq('user_id', userId)
+        .single();
+
+    let result;
+    if (existing) {
+        result = await supabaseAdmin
+            .from('user_messages')
+            .update({ message, active, updated_at: new Date().toISOString() })
+            .eq('user_id', userId);
+    } else {
+        result = await supabaseAdmin
+            .from('user_messages')
+            .insert([{ user_id: userId, message, active, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]);
+    }
+
+    if (result.error) {
+        showToast('Erro: ' + result.error.message, 'error');
+        showLoading(false);
+        return;
+    }
+
+    showToast('✅ Mensagem salva com sucesso!', 'success');
+    closeModal('add-message-modal');
+    await loadUserMessages();
+    showLoading(false);
+});
+
+function openEditMessage(id, message, active) {
+    document.getElementById('edit-message-id').value      = id;
+    document.getElementById('edit-message-text').value    = message;
+    document.getElementById('edit-message-active').checked = active;
+
+    // Buscar nome do usuário para exibir
+    const row = document.querySelector(`[onclick*="openEditMessage('${id}'"]`);
+    const usernameCell = row?.closest('tr')?.querySelector('td:first-child');
+    document.getElementById('edit-message-username').value = usernameCell?.textContent?.trim() || '—';
+
+    openModal('edit-message-modal');
+}
+
+document.getElementById('edit-message-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id      = document.getElementById('edit-message-id').value;
+    const message = document.getElementById('edit-message-text').value.trim();
+    const active  = document.getElementById('edit-message-active').checked;
+
+    if (!message) { showToast('A mensagem não pode estar vazia.', 'error'); return; }
+
+    showLoading(true);
+    const { error } = await supabaseAdmin
+        .from('user_messages')
+        .update({ message, active, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+    if (error) {
+        showToast('Erro: ' + error.message, 'error');
+        showLoading(false);
+        return;
+    }
+
+    showToast('✅ Mensagem atualizada!', 'success');
+    closeModal('edit-message-modal');
+    await loadUserMessages();
+    showLoading(false);
+});
+
+async function toggleMessage(id, newActive) {
+    showLoading(true);
+    const { error } = await supabaseAdmin
+        .from('user_messages')
+        .update({ active: newActive, updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+    if (error) {
+        showToast('Erro: ' + error.message, 'error');
+        showLoading(false);
+        return;
+    }
+
+    showToast(newActive ? '▶️ Mensagem ativada!' : '⏸ Mensagem desativada!', 'success');
+    await loadUserMessages();
+    showLoading(false);
+}
+
+async function deleteMessage(id) {
+    if (!confirm('Excluir esta mensagem de boas-vindas?')) return;
+    showLoading(true);
+    const { error } = await supabaseAdmin
+        .from('user_messages')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        showToast('Erro: ' + error.message, 'error');
+        showLoading(false);
+        return;
+    }
+
+    showToast('Mensagem excluída!', 'success');
+    await loadUserMessages();
+    showLoading(false);
+}
