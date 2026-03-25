@@ -392,3 +392,61 @@ if (savedCurrency) {
     currentCurrency = savedCurrency;
     window.CURRENCY = savedCurrency;
 }
+
+// =====================================================
+// MOBILE NAV — Hambúrguer + Drawer
+// =====================================================
+function toggleMobileNav() {
+    const btn     = document.getElementById('hamburger-btn');
+    const overlay = document.getElementById('mob-overlay');
+    const drawer  = document.getElementById('mob-drawer');
+
+    if (!btn || !overlay || !drawer) return;
+
+    const isOpen = drawer.classList.contains('open');
+
+    if (isOpen) {
+        closeMobileNav();
+    } else {
+        btn.classList.add('open');
+        overlay.classList.add('active');
+        drawer.classList.add('open');
+        document.body.classList.add('nav-open');
+    }
+}
+
+function closeMobileNav() {
+    const btn     = document.getElementById('hamburger-btn');
+    const overlay = document.getElementById('mob-overlay');
+    const drawer  = document.getElementById('mob-drawer');
+
+    if (btn)     btn.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+    if (drawer)  drawer.classList.remove('open');
+    document.body.classList.remove('nav-open');
+}
+
+// Fechar com Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeMobileNav();
+});
+
+// Wrap pools tables para scroll horizontal no mobile
+document.addEventListener('DOMContentLoaded', function() {
+    // Observar mudanças no DOM para capturar tables geradas pelo JS
+    const obs = new MutationObserver(function() {
+        document.querySelectorAll('.week-card table.pools-table').forEach(function(table) {
+            if (!table.parentElement.classList.contains('table-scroll-wrapper')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'table-scroll-wrapper';
+                table.parentNode.insertBefore(wrapper, table);
+                wrapper.appendChild(table);
+            }
+        });
+    });
+
+    const weeksContainer = document.getElementById('weeks-container');
+    if (weeksContainer) {
+        obs.observe(weeksContainer, { childList: true, subtree: true });
+    }
+});

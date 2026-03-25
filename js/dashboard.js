@@ -81,6 +81,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateAaveTabVisibility();
 
     document.getElementById('loading').style.display = 'none';
+
+    // ── Sistema de Metas (apenas para o próprio usuário, não modo admin view) ──
+    if (!isAdminView && window.SILTGoals) {
+        await window.SILTGoals.initGoalsSystem(targetUserId);
+    }
     switchCurrency(localStorage.getItem('silt_currency') || 'USD');
 });
 

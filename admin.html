@@ -45,7 +45,8 @@
 <div class="particles"></div><div class="header-trigger"></div>
 <header class="floating-header visible"><div class="header-content">
     <a href="index.html" class="logo"><span>◆</span> S.I.L.T.</a>
-    <nav><ul class="nav-links"><li><a href="dashboard.html">Dashboard</a></li><li><a href="#" onclick="logout()">Sair</a></li></ul></nav>
+    <button class="hamburger" id="hamburger-btn" aria-label="Menu" onclick="toggleMobileNav()"><span></span><span></span><span></span></button>
+            <nav><ul class="nav-links"><li><a href="dashboard.html">Dashboard</a></li><li><a href="#" onclick="logout()">Sair</a></li></ul></nav>
 </div></header>
 
 <div class="dashboard">
@@ -470,4 +471,18 @@ function clearPoolFilters() {
     loadUserPools();
 }
 </script>
+<div class="mobile-nav-overlay" id="mob-overlay" onclick="closeMobileNav()"></div>
+<div class="mobile-nav-drawer" id="mob-drawer">
+  <div class="mobile-nav-header">
+    <a href="index.html" class="mobile-nav-logo">◆ S.I.L.T.</a>
+    <button class="mobile-nav-close" onclick="closeMobileNav()">✕</button>
+  </div>
+  <ul class="mobile-nav-links">
+    <li><a href="dashboard.html"><span class="mob-nav-icon">📊</span> Dashboard</a></li>
+    <li><a href="admin.html" class="mob-active"><span class="mob-nav-icon">⚙️</span> Admin</a></li>
+    <li style="margin-top:16px;border-top:1px solid rgba(168,85,247,0.15);padding-top:16px;">
+      <button onclick="closeMobileNav();logout();"><span class="mob-nav-icon">🚪</span> Sair</button>
+    </li>
+  </ul>
+</div>
 </body></html>
