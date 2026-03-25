@@ -45,8 +45,7 @@
 <div class="particles"></div><div class="header-trigger"></div>
 <header class="floating-header visible"><div class="header-content">
     <a href="index.html" class="logo"><span>◆</span> S.I.L.T.</a>
-    <button class="hamburger" id="hamburger-btn" aria-label="Menu" onclick="toggleMobileNav()"><span></span><span></span><span></span></button>
-            <nav><ul class="nav-links"><li><a href="dashboard.html">Dashboard</a></li><li><a href="#" onclick="logout()">Sair</a></li></ul></nav>
+    <nav><ul class="nav-links"><li><a href="dashboard.html">Dashboard</a></li><li><a href="#" onclick="logout()">Sair</a></li></ul></nav>
 </div></header>
 
 <div class="dashboard">
@@ -165,20 +164,45 @@
       <div id="admin-messages" class="admin-section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:16px;">
           <h2>💬 Mensagens de Boas-Vindas</h2>
-          <button class="neon-btn" onclick="openModal('add-message-modal')">+ Nova Mensagem</button>
         </div>
         <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Configure mensagens personalizadas que aparecerão para cada usuário após o login.</p>
 
-        <!-- Lista de mensagens -->
-        <div class="data-table-container">
-          <table class="data-table">
-            <thead>
-              <tr><th>Usuário</th><th>Mensagem</th><th>Status</th><th>Ações</th></tr>
-            </thead>
-            <tbody id="messages-table-body">
-              <tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr>
-            </tbody>
-          </table>
+        <!-- Seletor de usuário -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
+          <div class="form-group" style="margin:0;"><label style="font-size:12px;">Usuário</label>
+            <select id="msg-user-filter" onchange="loadUserMessage()"><option value="">Selecione...</option></select>
+          </div>
+        </div>
+
+        <!-- Mensagem do usuário selecionado -->
+        <div id="msg-display" style="display:none;">
+          <div class="glass-card" style="padding:24px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+              <div style="flex:1;">
+                <p style="color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Mensagem atual</p>
+                <p id="msg-preview" style="font-size:15px;line-height:1.7;color:var(--text-primary);white-space:pre-wrap;"></p>
+              </div>
+              <span id="msg-status-badge" style="padding:4px 14px;border-radius:20px;font-size:12px;white-space:nowrap;"></span>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+              <button id="msg-toggle-btn" onclick="toggleCurrentMessage()" class="outline-btn" style="font-size:13px;padding:8px 16px;"></button>
+              <button onclick="openEditCurrentMessage()" class="neon-btn" style="font-size:13px;padding:8px 16px;">✏️ Editar</button>
+              <button onclick="deleteCurrentMessage()" style="background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer;">🗑️ Excluir</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Estado sem mensagem -->
+        <div id="msg-empty" style="display:none;">
+          <div class="glass-card" style="padding:32px;text-align:center;">
+            <p style="color:var(--text-muted);margin-bottom:20px;">Nenhuma mensagem configurada para este usuário.</p>
+            <button class="neon-btn" onclick="openModal('add-message-modal')">+ Criar Mensagem</button>
+          </div>
+        </div>
+
+        <!-- Estado inicial -->
+        <div id="msg-placeholder">
+          <p style="color:var(--text-muted);font-size:14px;text-align:center;padding:40px 0;">Selecione um usuário para ver ou configurar a mensagem de boas-vindas.</p>
         </div>
       </div>
 
@@ -471,18 +495,4 @@ function clearPoolFilters() {
     loadUserPools();
 }
 </script>
-<div class="mobile-nav-overlay" id="mob-overlay" onclick="closeMobileNav()"></div>
-<div class="mobile-nav-drawer" id="mob-drawer">
-  <div class="mobile-nav-header">
-    <a href="index.html" class="mobile-nav-logo">◆ S.I.L.T.</a>
-    <button class="mobile-nav-close" onclick="closeMobileNav()">✕</button>
-  </div>
-  <ul class="mobile-nav-links">
-    <li><a href="dashboard.html"><span class="mob-nav-icon">📊</span> Dashboard</a></li>
-    <li><a href="admin.html" class="mob-active"><span class="mob-nav-icon">⚙️</span> Admin</a></li>
-    <li style="margin-top:16px;border-top:1px solid rgba(168,85,247,0.15);padding-top:16px;">
-      <button onclick="closeMobileNav();logout();"><span class="mob-nav-icon">🚪</span> Sair</button>
-    </li>
-  </ul>
-</div>
 </body></html>

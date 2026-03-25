@@ -14,7 +14,6 @@
     <header class="floating-header">
         <div class="header-content">
             <a href="index.html" class="logo"><span>◆</span> S.I.L.T.</a>
-            <button class="hamburger" id="hamburger-btn" aria-label="Menu" onclick="toggleMobileNav()"><span></span><span></span><span></span></button>
             <nav>
                 <ul class="nav-links">
                     <li><a href="index.html">Home</a></li>
@@ -78,17 +77,5 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/main.js"></script>
     <script src="js/auth.js"></script>
-<div class="mobile-nav-overlay" id="mob-overlay" onclick="closeMobileNav()"></div>
-<div class="mobile-nav-drawer" id="mob-drawer">
-  <div class="mobile-nav-header">
-    <a href="index.html" class="mobile-nav-logo">◆ S.I.L.T.</a>
-    <button class="mobile-nav-close" onclick="closeMobileNav()">✕</button>
-  </div>
-  <ul class="mobile-nav-links">
-    <li><a href="index.html"><span class="mob-nav-icon">🏠</span> Home</a></li>
-    <li><a href="login.html" class="mob-active"><span class="mob-nav-icon">🔐</span> Login</a></li>
-    <li><a href="index.html#sobre"><span class="mob-nav-icon">ℹ️</span> Sobre</a></li>
-  </ul>
-</div>
 </body>
 </html>

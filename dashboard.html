@@ -15,7 +15,6 @@
     <header class="floating-header visible">
         <div class="header-content">
             <a href="index.html" class="logo"><span>◆</span> S.I.L.T.</a>
-            <button class="hamburger" id="hamburger-btn" aria-label="Menu" onclick="toggleMobileNav()"><span></span><span></span><span></span></button>
             <nav>
                 <ul class="nav-links">
                     <li><a href="dashboard.html" class="active">Dashboard</a></li>
@@ -166,23 +165,6 @@
     <script src="js/main.js"></script>
     <script src="js/charts.js"></script>
     <script src="js/dashboard.js"></script>
-<div class="mobile-nav-overlay" id="mob-overlay" onclick="closeMobileNav()"></div>
-<div class="mobile-nav-drawer" id="mob-drawer">
-  <div class="mobile-nav-header">
-    <a href="index.html" class="mobile-nav-logo">◆ S.I.L.T.</a>
-    <button class="mobile-nav-close" onclick="closeMobileNav()">✕</button>
-  </div>
-  <ul class="mobile-nav-links">
-    <li><a href="dashboard.html" class="mob-active"><span class="mob-nav-icon">📊</span> Dashboard</a></li>
-    <li><a href="#" onclick="closeMobileNav();showSection("overview");return false;"><span class="mob-nav-icon">👁️</span> Visão Geral</a></li>
-    <li><a href="#" onclick="closeMobileNav();showSection("pools");return false;"><span class="mob-nav-icon">💰</span> Pools</a></li>
-    <li id="mob-aave-link"><a href="#" onclick="closeMobileNav();showSection("aave");return false;"><span class="mob-nav-icon">🏦</span> AAVE</a></li>
-    <li id="mob-admin-link"><a href="admin.html"><span class="mob-nav-icon">⚙️</span> Admin</a></li>
-    <li><a href="#" onclick="closeMobileNav();if(window.SILTGoals)window.SILTGoals.openGoalsModal();return false;"><span class="mob-nav-icon">🎯</span> Metas</a></li>
-    <li style="margin-top:16px;border-top:1px solid rgba(168,85,247,0.15);padding-top:16px;">
-      <button onclick="closeMobileNav();logout();"><span class="mob-nav-icon">🚪</span> Sair</button>
-    </li>
-  </ul>
-</div>
+    <script src="js/goals.js"></script>
 </body>
 </html>
