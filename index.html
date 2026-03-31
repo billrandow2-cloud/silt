@@ -153,6 +153,15 @@
         <h2 style="text-align:center;font-size:36px;margin-bottom:12px;"><span class="gradient-text">🏆 Ranking</span></h2>
         <p style="text-align:center;color:var(--text-secondary);margin-bottom:20px;">Quem tem a vela maior é o líder</p>
 
+        <!-- Toggle Semanal/Mensal/Patrimônio -->
+        <div style="display:flex;justify-content:center;margin-bottom:16px;">
+            <div class="toggle-group">
+                <button id="btn-period-weekly" class="toggle-btn toggle-active">📅 Semanal</button>
+                <button id="btn-period-monthly" class="toggle-btn">📊 Mensal</button>
+                <button id="btn-period-patrimonio" class="toggle-btn">💎 Patrimônio</button>
+            </div>
+        </div>
+
         <!-- Toggle início/fim — só aparece se tiver points_end > 0 -->
         <div id="ranking-toggle-wrap" style="display:none;justify-content:center;margin-bottom:20px;">
             <div class="toggle-group">
@@ -176,7 +185,7 @@
         </div>
 
         <!-- Navegação -->
-        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+        <div id="ranking-nav-controls" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
             <button id="ranking-prev" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--text-secondary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s;">← Anterior</button>
             <select id="ranking-period-select" style="background:rgba(255,255,255,.05);border:1px solid rgba(168,85,247,.2);color:var(--text-primary);padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;max-width:260px;"></select>
             <button id="ranking-next" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--text-secondary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s;">Próximo →</button>
