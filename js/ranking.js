@@ -546,7 +546,7 @@ async function renderPatrimonioRanking() {
     if (monthLabel) monthLabel.textContent  = 'Patrimônio';
     if (weekLabel)  weekLabel.textContent   = 'Atual';
     if (dateLabel)  dateLabel.style.display = 'none';
-    if (chartTitle) chartTitle.textContent  = '💎 Total pagando empréstimo (WETH + Pools)';
+    if (chartTitle) chartTitle.textContent  = '💎 Ranking Patrimonial';
     if (evolutionWrap) evolutionWrap.style.display = 'none';
 
     container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:280px;color:var(--text-muted);">
