@@ -77,7 +77,7 @@ function renderUsersTable() {
 }
 
 function populateUserSelects() {
-    ['pool-user','aave-user','pool-user-filter','aave-user-filter'].forEach(id => {
+    ['pool-user','aave-user','pool-user-filter','aave-user-filter','message-user','msg-user-filter'].forEach(id => {
         const sel = document.getElementById(id); if (!sel) return;
         const first = sel.options[0]; sel.innerHTML = ''; sel.appendChild(first);
         allUsers.forEach(u => { const o = document.createElement('option'); o.value = u.id; o.textContent = u.username; sel.appendChild(o); });
@@ -558,6 +558,133 @@ async function deleteRanking(id) {
     if (error) { showToast('Erro: '+error.message,'error'); showLoading(false); return; }
     showToast('Removido!','success'); await loadRankingAdmin(); showLoading(false);
 }
+
+// =====================================================
+// MENSAGENS DE BOAS-VINDAS
+// =====================================================
+let currentMessageData = null;
+
+async function loadUserMessage() {
+    const userId    = document.getElementById('msg-user-filter').value;
+    const display   = document.getElementById('msg-display');
+    const empty     = document.getElementById('msg-empty');
+    const placeholder = document.getElementById('msg-placeholder');
+
+    display.style.display     = 'none';
+    empty.style.display       = 'none';
+    placeholder.style.display = 'block';
+
+    if (!userId) return;
+
+    placeholder.style.display = 'none';
+    showLoading(true);
+
+    const { data, error } = await supabaseAdmin
+        .from('user_messages')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+    showLoading(false);
+    currentMessageData = data || null;
+
+    if (error || !data) {
+        empty.style.display = 'block';
+        // Pré-selecionar o usuário no modal de criação
+        const msgUserSel = document.getElementById('message-user');
+        if (msgUserSel) msgUserSel.value = userId;
+        return;
+    }
+
+    // Exibir mensagem existente
+    display.style.display = 'block';
+    document.getElementById('msg-preview').textContent = data.message;
+
+    const badge  = document.getElementById('msg-status-badge');
+    const toggleBtn = document.getElementById('msg-toggle-btn');
+    if (data.active) {
+        badge.textContent = '● Ativa';
+        badge.style.cssText = 'padding:4px 14px;border-radius:20px;font-size:12px;white-space:nowrap;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);';
+        toggleBtn.textContent = '⏸ Desativar';
+    } else {
+        badge.textContent = '○ Inativa';
+        badge.style.cssText = 'padding:4px 14px;border-radius:20px;font-size:12px;white-space:nowrap;background:rgba(255,255,255,0.05);color:var(--text-muted);border:1px solid var(--border-glass);';
+        toggleBtn.textContent = '▶ Ativar';
+    }
+}
+
+async function toggleCurrentMessage() {
+    if (!currentMessageData) return;
+    showLoading(true);
+    const newActive = !currentMessageData.active;
+    const { error } = await supabaseAdmin
+        .from('user_messages')
+        .update({ active: newActive })
+        .eq('id', currentMessageData.id);
+    if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
+    showToast(newActive ? 'Mensagem ativada!' : 'Mensagem desativada!', 'success');
+    await loadUserMessage();
+    showLoading(false);
+}
+
+function openEditCurrentMessage() {
+    if (!currentMessageData) return;
+    document.getElementById('edit-message-id').value       = currentMessageData.id;
+    document.getElementById('edit-message-username').value = allUsers.find(u => u.id === currentMessageData.user_id)?.username || '';
+    document.getElementById('edit-message-text').value     = currentMessageData.message;
+    document.getElementById('edit-message-active').checked = currentMessageData.active;
+    openModal('edit-message-modal');
+}
+
+async function deleteCurrentMessage() {
+    if (!currentMessageData) return;
+    if (!confirm('Excluir esta mensagem?')) return;
+    showLoading(true);
+    const { error } = await supabaseAdmin
+        .from('user_messages')
+        .delete()
+        .eq('id', currentMessageData.id);
+    if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
+    showToast('Mensagem excluída!', 'success');
+    currentMessageData = null;
+    await loadUserMessage();
+    showLoading(false);
+}
+
+document.getElementById('add-message-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const userId  = document.getElementById('message-user').value;
+    const message = document.getElementById('message-text').value.trim();
+    const active  = document.getElementById('message-active').checked;
+    if (!userId || !message) { showToast('Preencha todos os campos.', 'error'); return; }
+    showLoading(true);
+    // Desativar mensagens anteriores do usuário
+    await supabaseAdmin.from('user_messages').update({ active: false }).eq('user_id', userId);
+    const { error } = await supabaseAdmin.from('user_messages').insert([{ user_id: userId, message, active }]);
+    if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
+    showToast('Mensagem criada!', 'success');
+    closeModal('add-message-modal');
+    // Atualizar o filtro de usuário para mostrar a nova mensagem
+    const msgFilter = document.getElementById('msg-user-filter');
+    if (msgFilter) { msgFilter.value = userId; await loadUserMessage(); }
+    showLoading(false);
+});
+
+document.getElementById('edit-message-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id      = document.getElementById('edit-message-id').value;
+    const message = document.getElementById('edit-message-text').value.trim();
+    const active  = document.getElementById('edit-message-active').checked;
+    showLoading(true);
+    const { error } = await supabaseAdmin.from('user_messages').update({ message, active }).eq('id', id);
+    if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
+    showToast('Mensagem atualizada!', 'success');
+    closeModal('edit-message-modal');
+    await loadUserMessage();
+    showLoading(false);
+});
 
 // =====================================================
 // UTILITÁRIOS
