@@ -1100,48 +1100,448 @@ body::before {
     }
 }
 
-@media (max-width: 768px) {
-    .floating-header .nav-links {
-        display: none;
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVIDADE PARA CELULARES
+   ═══════════════════════════════════════════════════════════ */
+
+/* Melhorias de toque para dispositivos móveis */
+@media (hover: none) and (pointer: coarse) {
+    /* Aumentar áreas de toque */
+    button, a, input, select {
+        min-height: 44px;
     }
 
+    .toggle-btn, .nav-tabs button {
+        min-height: 48px;
+    }
+
+    /* Remover hover effects que não funcionam bem em touch */
+    .glass-card:hover {
+        transform: none;
+    }
+
+    .silt-card:hover::before {
+        left: -100%;
+    }
+}
+
+/* Tablet e celulares grandes (até 768px) */
+@media (max-width: 768px) {
+    /* Header com menu mobile */
+    .floating-header {
+        padding: 12px 16px;
+    }
+
+    .floating-header .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(11, 11, 15, 0.98);
+        backdrop-filter: blur(20px);
+        flex-direction: column;
+        padding: 16px;
+        gap: 8px;
+        border-bottom: 1px solid var(--border-glass);
+        animation: slideDown 0.3s ease;
+    }
+
+    .floating-header .nav-links.active {
+        display: flex;
+    }
+
+    .floating-header .nav-links li {
+        width: 100%;
+    }
+
+    .floating-header .nav-links a {
+        display: block;
+        padding: 12px 16px;
+        border-radius: 8px;
+    }
+
+    /* Botão menu mobile */
+    .mobile-menu-btn {
+        display: flex !important;
+        flex-direction: column;
+        gap: 4px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        z-index: 1001;
+    }
+
+    .mobile-menu-btn span {
+        width: 24px;
+        height: 2px;
+        background: var(--neon-purple);
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    .mobile-menu-btn.active span:nth-child(1) {
+        transform: rotate(45deg) translate(6px, 6px);
+    }
+
+    .mobile-menu-btn.active span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .mobile-menu-btn.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(6px, -6px);
+    }
+
+    /* Dashboard header */
     .dashboard-header {
         flex-direction: column;
         text-align: center;
+        gap: 16px;
     }
 
+    .dashboard-header h1 {
+        font-size: 24px;
+    }
+
+    .user-info {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Nav tabs */
+    .nav-tabs {
+        flex-wrap: wrap;
+        gap: 4px;
+        padding-bottom: 4px;
+    }
+
+    .nav-tabs button {
+        flex: 1 1 calc(50% - 4px);
+        justify-content: center;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    /* Stats grid */
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .stat-card .stat-value {
+        font-size: 28px;
+    }
+
+    .stat-card .stat-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+    }
+
+    /* Charts */
     .charts-grid {
         grid-template-columns: 1fr;
+        gap: 16px;
     }
 
     .chart-container {
         height: 250px;
     }
 
+    /* Cards de patrimônio */
+    .aave-cards {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .aave-card .aave-value {
+        font-size: 28px;
+    }
+
+    /* Pools e semanas */
     .months-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    /* Tabelas com scroll horizontal */
+    .data-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .data-table {
+        min-width: 600px;
+    }
+
+    /* Admin sidebar */
+    .admin-grid {
         grid-template-columns: 1fr;
     }
 
-    .nav-tabs {
+    .admin-sidebar {
+        order: -1;
+    }
+
+    .admin-menu {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .admin-menu li {
+        margin-bottom: 0;
+    }
+
+    .admin-menu button {
+        width: auto;
+        flex: 1 1 auto;
+    }
+
+    /* Modal */
+    .modal {
+        width: 95%;
+        padding: 24px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    /* Toast */
+    .toast-container {
+        right: 16px;
+        left: 16px;
+    }
+
+    .toast {
+        min-width: auto;
+        width: 100%;
+    }
+
+    /* Hero section */
+    .hero {
+        padding: 24px 16px;
+    }
+
+    .hero-title {
+        font-size: 28px !important;
+    }
+
+    .hero-subtitle {
+        font-size: 16px;
+    }
+
+    .silt-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .silt-card {
+        padding: 20px 16px;
+    }
+
+    .silt-letter {
+        font-size: 42px;
+    }
+
+    /* Ranking section */
+    #ranking {
+        padding: 40px 16px;
+    }
+
+    .toggle-group {
         flex-wrap: wrap;
     }
 
-    .glass-card {
-        padding: 20px;
+    .toggle-btn {
+        flex: 1 1 auto;
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    #ranking-nav-controls {
+        flex-wrap: wrap;
+    }
+
+    #ranking-period-select {
+        width: 100%;
+        max-width: none;
+        order: -1;
+        margin-bottom: 8px;
+    }
+
+    /* Padding do corpo para header fixo */
+    body {
+        padding-top: 60px;
     }
 }
 
+/* Celulares pequenos (até 480px) */
 @media (max-width: 480px) {
+    /* Tipografia */
     .hero-title {
-        font-size: 28px;
+        font-size: 24px !important;
+    }
+
+    .hero-subtitle {
+        font-size: 14px;
+    }
+
+    .floating-header .logo {
+        font-size: 18px;
+    }
+
+    /* Botões */
+    .neon-btn {
+        padding: 12px 20px;
+        font-size: 14px;
+        width: 100%;
+    }
+
+    .hero .neon-btn {
+        width: auto;
+    }
+
+    /* Stats cards */
+    .stat-card {
+        padding: 20px 16px;
     }
 
     .stat-card .stat-value {
         font-size: 24px;
     }
 
+    .stat-card .stat-label {
+        font-size: 12px;
+    }
+
+    /* Chart cards */
+    .chart-card {
+        padding: 20px 16px;
+    }
+
+    .chart-card h3 {
+        font-size: 16px;
+    }
+
+    .chart-container {
+        height: 220px;
+    }
+
+    /* AAVE cards */
+    .aave-card {
+        padding: 24px 16px;
+    }
+
+    .aave-card .aave-icon {
+        width: 56px;
+        height: 56px;
+        font-size: 24px;
+    }
+
     .aave-card .aave-value {
+        font-size: 24px;
+    }
+
+    .aave-card h3 {
+        font-size: 14px;
+    }
+
+    /* Forms */
+    .form-group input,
+    .form-group select {
+        padding: 12px 14px;
+        font-size: 15px;
+    }
+
+    /* Login card */
+    .login-card {
+        padding: 24px 20px;
+    }
+
+    .login-card .logo-icon {
+        width: 64px;
+        height: 64px;
         font-size: 28px;
+    }
+
+    .login-card h1 {
+        font-size: 24px;
+    }
+
+    /* Dashboard padding */
+    .dashboard {
+        padding: 80px 16px 24px;
+    }
+
+    /* Sections padding */
+    section {
+        padding: 40px 16px !important;
+    }
+
+    /* Section titles */
+    section h2 {
+        font-size: 28px !important;
+    }
+
+    /* Silt cards */
+    .silt-letter {
+        font-size: 36px;
+    }
+
+    .silt-word {
+        font-size: 14px;
+    }
+
+    .silt-desc {
+        font-size: 12px;
+    }
+
+    /* Footer */
+    footer {
+        padding: 24px 16px;
+    }
+
+    /* Glass cards genericas */
+    .glass-card {
+        padding: 20px 16px;
+        border-radius: 12px;
+    }
+
+    /* Currency switcher menor */
+    .currency-switcher {
+        padding: 3px;
+    }
+
+    .currency-switcher button {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+
+    /* Nav tabs em coluna única se necessário */
+    .nav-tabs button {
+        flex: 1 1 100%;
+    }
+
+    /* Totais grid */
+    .stats-grid + div[style*="grid-template-columns:1fr 1fr"] {
+        grid-template-columns: 1fr;
+    }
+
+    /* Ranking candles - ajustar gap */
+    #ranking-chart > div > div {
+        gap: 12px !important;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -1245,6 +1645,30 @@ body::before {
 #aave-month-selector:focus {
     outline: none;
     border-color: var(--neon-purple);
+}
+
+/* Seletor de período do ranking - opções com fundo escuro */
+#ranking-period-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-glass);
+    color: var(--text-primary);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+#ranking-period-select:focus {
+    outline: none;
+    border-color: var(--neon-purple);
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+}
+
+#ranking-period-select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 10px;
 }
 
 /* Scroll suave para âncoras com header fixo */

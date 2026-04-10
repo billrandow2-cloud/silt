@@ -6,6 +6,7 @@ let currentCurrency = 'USD';
 let exchangeRate = { USD: 1, BRL: 5.0 }; // Default rate, will be fetched
 let headerVisible = false;
 let headerTimeout = null;
+let mobileMenuOpen = false;
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
@@ -60,6 +61,41 @@ function initHeader() {
         lastScrollY = currentScrollY;
     });
 }
+
+// Mobile menu toggle
+function toggleMobileMenu() {
+    const navLinks = document.querySelector('.floating-header .nav-links');
+    const menuBtn = document.querySelector('.mobile-menu-btn');
+
+    if (!navLinks || !menuBtn) return;
+
+    mobileMenuOpen = !mobileMenuOpen;
+
+    if (mobileMenuOpen) {
+        navLinks.classList.add('active');
+        menuBtn.classList.add('active');
+        document.body.style.overflow = 'hidden'; // Prevent scroll when menu open
+    } else {
+        navLinks.classList.remove('active');
+        menuBtn.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+// Close mobile menu when clicking on a link
+document.addEventListener('click', (e) => {
+    if (mobileMenuOpen) {
+        const navLinks = document.querySelector('.floating-header .nav-links');
+        const menuBtn = document.querySelector('.mobile-menu-btn');
+
+        if (e.target.closest('a') && e.target.closest('.nav-links')) {
+            mobileMenuOpen = false;
+            navLinks.classList.remove('active');
+            menuBtn.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+});
 
 // Create floating particles
 function initParticles() {
@@ -383,8 +419,12 @@ window.SILTUtils = {
     saveSession,
     getSession,
     clearSession,
-    fetchExchangeRate
+    fetchExchangeRate,
+    toggleMobileMenu
 };
+
+// Make toggleMobileMenu globally available
+window.toggleMobileMenu = toggleMobileMenu;
 
 // Load saved currency preference
 const savedCurrency = localStorage.getItem('silt_currency');
