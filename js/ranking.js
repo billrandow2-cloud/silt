@@ -20,20 +20,12 @@ function fmtDate(d) {
     return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
 }
 
-// Obter lista de meses únicos dos dados, com mês atual sempre primeiro
+// Obter lista de meses únicos dos dados (mais recente primeiro)
 function getUniqueMonths() {
     const months = new Set();
     allRankingData.forEach(r => months.add(r.month));
-
-    // Adicionar mês atual se ainda não estiver na lista
-    const currentMonth = PT_MONTHS[new Date().getMonth()];
-    months.add(currentMonth);
-
-    // Ordenar: mês atual primeiro, depois os outros do mais recente ao mais antigo
-    const allMonths = PT_MONTHS.filter(m => months.has(m));
-    const otherMonths = allMonths.filter(m => m !== currentMonth);
-
-    return [currentMonth, ...otherMonths];
+    // Filtra pelos meses que existem e ordena do mais recente para o mais antigo
+    return PT_MONTHS.filter(m => months.has(m)).reverse();
 }
 
 // Calcular ranking mensal (soma de todas as semanas do mês)

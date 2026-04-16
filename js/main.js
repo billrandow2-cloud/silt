@@ -6,15 +6,67 @@ let currentCurrency = 'USD';
 let exchangeRate = { USD: 1, BRL: 5.0 }; // Default rate, will be fetched
 let headerVisible = false;
 let headerTimeout = null;
-let mobileMenuOpen = false;
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    checkMobileWarning();
     initHeader();
     initParticles();
     initAnimations();
     fetchExchangeRate();
 });
+
+// Check if user is on mobile and show warning
+function checkMobileWarning() {
+    // Detect if it's a real mobile device
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isSmallScreen = window.innerWidth <= 768;
+
+    // Check if user is NOT in desktop mode (mobile user agent still present)
+    // When user enables "Desktop site", the userAgent changes to desktop
+    const isInMobileMode = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    // Show warning if: mobile device AND small screen AND still in mobile mode
+    if (isMobileDevice && isSmallScreen && isInMobileMode) {
+        showMobileWarning();
+    }
+}
+
+// Show mobile warning overlay (obrigatório - não pode fechar)
+function showMobileWarning() {
+    const existingOverlay = document.querySelector('.mobile-warning-overlay');
+    if (existingOverlay) return; // Already exists
+
+    const overlay = document.createElement('div');
+    overlay.className = 'mobile-warning-overlay active';
+    overlay.innerHTML = `
+        <div class="mobile-warning-card">
+            <div class="mobile-warning-icon">📱</div>
+            <h2>Modo Desktop Obrigatório</h2>
+            <p>Este site só pode ser acessado em <strong>modo de computador</strong>. Ative-o no seu navegador para continuar.</p>
+            <div class="mobile-warning-steps">
+                <h3>Como ativar:</h3>
+                <ol>
+                    <li>Toque no menu do navegador (⋮ ou ⚙)</li>
+                    <li>Selecione <strong>"Site para computador"</strong> ou <strong>"Desktop site"</strong></li>
+                    <li>Toque no botão abaixo para recarregar</li>
+                </ol>
+            </div>
+            <button class="mobile-warning-btn" onclick="location.reload()">🔄 Recarregar Página</button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+
+    // Impede que o usuário remova o overlay manualmente
+    const observer = new MutationObserver((mutations) => {
+        if (!document.querySelector('.mobile-warning-overlay')) {
+            showMobileWarning();
+        }
+    });
+    observer.observe(document.body, { childList: true });
+}
 
 // Header show/hide on mouse approach
 function initHeader() {
@@ -61,41 +113,6 @@ function initHeader() {
         lastScrollY = currentScrollY;
     });
 }
-
-// Mobile menu toggle
-function toggleMobileMenu() {
-    const navLinks = document.querySelector('.floating-header .nav-links');
-    const menuBtn = document.querySelector('.mobile-menu-btn');
-
-    if (!navLinks || !menuBtn) return;
-
-    mobileMenuOpen = !mobileMenuOpen;
-
-    if (mobileMenuOpen) {
-        navLinks.classList.add('active');
-        menuBtn.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Prevent scroll when menu open
-    } else {
-        navLinks.classList.remove('active');
-        menuBtn.classList.remove('active');
-        document.body.style.overflow = '';
-    }
-}
-
-// Close mobile menu when clicking on a link
-document.addEventListener('click', (e) => {
-    if (mobileMenuOpen) {
-        const navLinks = document.querySelector('.floating-header .nav-links');
-        const menuBtn = document.querySelector('.mobile-menu-btn');
-
-        if (e.target.closest('a') && e.target.closest('.nav-links')) {
-            mobileMenuOpen = false;
-            navLinks.classList.remove('active');
-            menuBtn.classList.remove('active');
-            document.body.style.overflow = '';
-        }
-    }
-});
 
 // Create floating particles
 function initParticles() {
@@ -419,12 +436,8 @@ window.SILTUtils = {
     saveSession,
     getSession,
     clearSession,
-    fetchExchangeRate,
-    toggleMobileMenu
+    fetchExchangeRate
 };
-
-// Make toggleMobileMenu globally available
-window.toggleMobileMenu = toggleMobileMenu;
 
 // Load saved currency preference
 const savedCurrency = localStorage.getItem('silt_currency');
