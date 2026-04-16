@@ -588,6 +588,16 @@ body::before {
     color: #3b82f6;
 }
 
+.stat-card .stat-icon.yellow {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+}
+
+.stat-card .stat-icon.cyan {
+    background: rgba(34, 211, 238, 0.2);
+    color: #22d3ee;
+}
+
 .stat-card .stat-label {
     color: var(--text-secondary);
     font-size: 14px;

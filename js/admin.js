@@ -208,17 +208,18 @@ async function loadUserPools() {
     const { data: pools, error } = await query;
     if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
     tbody.innerHTML = '';
-    if (!pools?.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-secondary);">Nenhum dado</td></tr>'; showLoading(false); return; }
+    if (!pools?.length) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-secondary);">Nenhum dado</td></tr>'; showLoading(false); return; }
     pools.forEach(pool => {
         const ini = parseFloat(pool.initial_value ?? pool.invested_value ?? 0);
         const y   = parseFloat(pool.yield_percent ?? 0);
         const c   = parseFloat(pool.contribution_value ?? 0);
+        const rp  = parseFloat(pool.reinvested_profit ?? 0);
         const p   = parseFloat(pool.profit_value ?? 0);
         const cu  = parseFloat(pool.current_value ?? 0);
-        const d   = cu > 0 ? cu - ini : p;
+        const d   = cu > 0 ? cu - ini - rp : p;
         const tag = cu > 0 ? `<span style="color:${d>=0?'#22c55e':'#ef4444'};font-size:11px;">${d>=0?'▲':'▼'}$${Math.abs(d).toFixed(2)}</span>` : '';
         const row = document.createElement('tr');
-        row.innerHTML = `<td>${pool.users?.username||'-'}</td><td>${pool.month}</td><td>${pool.week}</td><td>${pool.pool_name}</td><td>$${ini.toFixed(2)}</td><td>${y>0?y.toFixed(2)+'%':'-'}</td><td>${c>0?'$'+c.toFixed(2):'-'}</td><td style="color:var(--success);">+$${p.toFixed(2)}</td><td>${cu>0?'$'+cu.toFixed(2)+' '+tag:'-'}</td><td class="actions"><button onclick="copyPool('${pool.id}')" title="Copiar pool" style="background:rgba(59,130,246,0.15);color:#3b82f6;border-radius:6px;padding:6px;border:none;cursor:pointer;font-size:14px;">📋</button><button class="edit" onclick="openEditPool('${pool.id}','${pool.month}','${pool.week}','${pool.pool_name}',${ini},${y},${c},${p},${cu})">✏️</button><button class="delete" onclick="deletePool('${pool.id}')">🗑️</button></td>`;
+        row.innerHTML = `<td>${pool.users?.username||'-'}</td><td>${pool.month}</td><td>${pool.week}</td><td>${pool.pool_name}</td><td>$${ini.toFixed(2)}</td><td>${y>0?y.toFixed(2)+'%':'-'}</td><td>${c>0?'$'+c.toFixed(2):'-'}</td><td style="color:#22c55e;">${rp>0?'$'+rp.toFixed(2):'-'}</td><td style="color:var(--success);">+$${p.toFixed(2)}</td><td>${cu>0?'$'+cu.toFixed(2)+' '+tag:'-'}</td><td class="actions"><button onclick="copyPool('${pool.id}')" title="Copiar pool" style="background:rgba(59,130,246,0.15);color:#3b82f6;border-radius:6px;padding:6px;border:none;cursor:pointer;font-size:14px;">📋</button><button class="edit" onclick="openEditPool('${pool.id}','${pool.month}','${pool.week}','${pool.pool_name}',${ini},${y},${c},${rp},${p},${cu})">✏️</button><button class="delete" onclick="deletePool('${pool.id}')">🗑️</button></td>`;
         tbody.appendChild(row);
     });
     showLoading(false);
@@ -227,24 +228,24 @@ async function loadUserPools() {
 document.getElementById('add-pool-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const i=parseFloat(document.getElementById('pool-initial').value)||0, y=parseFloat(document.getElementById('pool-yield').value)||0;
-    const c=parseFloat(document.getElementById('pool-contribution').value)||0, p=parseFloat(document.getElementById('pool-profit').value)||0, cu=parseFloat(document.getElementById('pool-current').value)||0;
+    const c=parseFloat(document.getElementById('pool-contribution').value)||0, rp=parseFloat(document.getElementById('pool-reinvested').value)||0, p=parseFloat(document.getElementById('pool-profit').value)||0, cu=parseFloat(document.getElementById('pool-current').value)||0;
     showLoading(true);
-    const { error } = await supabaseAdmin.from('pool_data').insert([{ user_id:document.getElementById('pool-user').value, month:document.getElementById('pool-month').value, week:document.getElementById('pool-week').value, pool_name:document.getElementById('pool-name').value, initial_value:i, yield_percent:y, contribution_value:c, profit_value:p, current_value:cu, invested_value:i+c }]);
+    const { error } = await supabaseAdmin.from('pool_data').insert([{ user_id:document.getElementById('pool-user').value, month:document.getElementById('pool-month').value, week:document.getElementById('pool-week').value, pool_name:document.getElementById('pool-name').value, initial_value:i, yield_percent:y, contribution_value:c, reinvested_profit:rp, profit_value:p, current_value:cu, invested_value:i+c }]);
     if (error) { showToast('Erro: '+error.message,'error'); showLoading(false); return; }
     showToast('Pool adicionada!','success'); closeModal('add-pool-modal'); await loadUserPools(); showLoading(false);
 });
 
-function openEditPool(id,month,week,name,ini,y,c,p,cu) {
-    document.getElementById('edit-pool-id').value=id; document.getElementById('edit-pool-month').value=month; document.getElementById('edit-pool-week').value=week; document.getElementById('edit-pool-name').value=name; document.getElementById('edit-pool-initial').value=ini; document.getElementById('edit-pool-yield').value=y; document.getElementById('edit-pool-contribution').value=c; document.getElementById('edit-pool-profit').value=p; document.getElementById('edit-pool-current').value=cu;
+function openEditPool(id,month,week,name,ini,y,c,rp,p,cu) {
+    document.getElementById('edit-pool-id').value=id; document.getElementById('edit-pool-month').value=month; document.getElementById('edit-pool-week').value=week; document.getElementById('edit-pool-name').value=name; document.getElementById('edit-pool-initial').value=ini; document.getElementById('edit-pool-yield').value=y; document.getElementById('edit-pool-contribution').value=c; document.getElementById('edit-pool-reinvested').value=rp; document.getElementById('edit-pool-profit').value=p; document.getElementById('edit-pool-current').value=cu;
     openModal('edit-pool-modal');
 }
 
 document.getElementById('edit-pool-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const i=parseFloat(document.getElementById('edit-pool-initial').value)||0, y=parseFloat(document.getElementById('edit-pool-yield').value)||0;
-    const c=parseFloat(document.getElementById('edit-pool-contribution').value)||0, p=parseFloat(document.getElementById('edit-pool-profit').value)||0, cu=parseFloat(document.getElementById('edit-pool-current').value)||0;
+    const c=parseFloat(document.getElementById('edit-pool-contribution').value)||0, rp=parseFloat(document.getElementById('edit-pool-reinvested').value)||0, p=parseFloat(document.getElementById('edit-pool-profit').value)||0, cu=parseFloat(document.getElementById('edit-pool-current').value)||0;
     showLoading(true);
-    const { error } = await supabaseAdmin.from('pool_data').update({ month:document.getElementById('edit-pool-month').value, week:document.getElementById('edit-pool-week').value, pool_name:document.getElementById('edit-pool-name').value, initial_value:i, yield_percent:y, contribution_value:c, profit_value:p, current_value:cu, invested_value:i+c }).eq('id', document.getElementById('edit-pool-id').value);
+    const { error } = await supabaseAdmin.from('pool_data').update({ month:document.getElementById('edit-pool-month').value, week:document.getElementById('edit-pool-week').value, pool_name:document.getElementById('edit-pool-name').value, initial_value:i, yield_percent:y, contribution_value:c, reinvested_profit:rp, profit_value:p, current_value:cu, invested_value:i+c }).eq('id', document.getElementById('edit-pool-id').value);
     if (error) { showToast('Erro: '+error.message,'error'); showLoading(false); return; }
     showToast('Pool atualizada!','success'); closeModal('edit-pool-modal'); await loadUserPools(); showLoading(false);
 });
@@ -271,6 +272,7 @@ async function copyPool(poolId) {
         initial_value: pool.initial_value,
         yield_percent: pool.yield_percent,
         contribution_value: pool.contribution_value,
+        reinvested_profit: pool.reinvested_profit || 0,
         profit_value: pool.profit_value,
         current_value: pool.current_value,
         invested_value: pool.invested_value
@@ -283,6 +285,150 @@ async function copyPool(poolId) {
     await loadUserPools();
     showLoading(false);
 }
+
+// ─── COPIAR SEMANA INTEIRA ───────────────────────────────
+function openCopyWeekModal() {
+    // Popular select de usuários
+    const srcUserSel = document.getElementById('cw-src-user');
+    srcUserSel.innerHTML = '<option value="">Selecione...</option>';
+    allUsers.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = u.username;
+        srcUserSel.appendChild(opt);
+    });
+
+    // Limpar preview
+    document.getElementById('cw-preview').innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;">Selecione usuário, mês e semana para ver o preview.</p>';
+
+    // Resetar formulário
+    document.getElementById('copy-week-form').reset();
+
+    openModal('copy-week-modal');
+}
+
+async function previewCopyWeek() {
+    const userId = document.getElementById('cw-src-user').value;
+    const month = document.getElementById('cw-src-month').value;
+    const week = document.getElementById('cw-src-week').value;
+    const zeroProfit = document.getElementById('cw-zero-profit').checked;
+    const previewDiv = document.getElementById('cw-preview');
+
+    if (!userId || !month || !week) {
+        previewDiv.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;">Selecione usuário, mês e semana para ver o preview.</p>';
+        return;
+    }
+
+    showLoading(true);
+    const { data: pools, error } = await supabaseAdmin.from('pool_data')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('month', month)
+        .eq('week', week);
+
+    showLoading(false);
+
+    if (error || !pools?.length) {
+        previewDiv.innerHTML = '<p style="color:#ef4444;font-size:13px;text-align:center;">Nenhuma pool encontrada para esta semana.</p>';
+        return;
+    }
+
+    const f = v => '$' + (parseFloat(v || 0)).toFixed(2);
+    let html = `<table style="width:100%;font-size:12px;border-collapse:collapse;">
+        <tr style="color:var(--text-muted);border-bottom:1px solid var(--border-glass);">
+            <th style="padding:6px;text-align:left;">Pool</th>
+            <th style="padding:6px;text-align:right;">Atual</th>
+            <th style="padding:6px;text-align:right;">→ Inicial</th>
+            <th style="padding:6px;text-align:right;">Aporte</th>
+            <th style="padding:6px;text-align:right;">Reinvest.</th>
+            <th style="padding:6px;text-align:right;">Lucro</th>
+        </tr>`;
+
+    pools.forEach(p => {
+        const currentVal = parseFloat(p.current_value || 0);
+        const contributionVal = parseFloat(p.contribution_value || 0);
+        const reinvestedVal = parseFloat(p.reinvested_profit || 0);
+        const profitVal = zeroProfit ? 0 : parseFloat(p.profit_value || 0);
+
+        html += `<tr>
+            <td style="padding:6px;">${p.pool_name}</td>
+            <td style="padding:6px;text-align:right;">${f(currentVal)}</td>
+            <td style="padding:6px;text-align:right;color:#22c55e;">${f(currentVal)}</td>
+            <td style="padding:6px;text-align:right;color:var(--text-muted);">0</td>
+            <td style="padding:6px;text-align:right;color:var(--text-muted);">0</td>
+            <td style="padding:6px;text-align:right;color:${zeroProfit ? 'var(--text-muted)' : 'var(--success)'};">${f(profitVal)}</td>
+        </tr>`;
+    });
+
+    html += '</table>';
+    html += `<p style="margin-top:10px;font-size:11px;color:var(--text-muted);">
+        ${zeroProfit ? '✓ Lucro e rendimento serão zerados' : '○ Lucro e rendimento serão mantidos'}
+        <br>• Valor Atual → Valor Inicial do destino
+        <br>• Aporte = 0, Reinvestido = 0 (nova semana)
+    </p>`;
+
+    previewDiv.innerHTML = html;
+}
+
+document.getElementById('copy-week-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const userId = document.getElementById('cw-src-user').value;
+    const srcMonth = document.getElementById('cw-src-month').value;
+    const srcWeek = document.getElementById('cw-src-week').value;
+    const dstMonth = document.getElementById('cw-dst-month').value;
+    const dstWeek = document.getElementById('cw-dst-week').value;
+    const zeroProfit = document.getElementById('cw-zero-profit').checked;
+
+    if (!userId || !srcMonth || !srcWeek || !dstMonth || !dstWeek) {
+        showToast('Preencha todos os campos.', 'error');
+        return;
+    }
+
+    showLoading(true);
+
+    // Buscar pools da semana origem
+    const { data: pools, error: fetchErr } = await supabaseAdmin.from('pool_data')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('month', srcMonth)
+        .eq('week', srcWeek);
+
+    if (fetchErr || !pools?.length) {
+        showToast('Nenhuma pool encontrada na origem.', 'error');
+        showLoading(false);
+        return;
+    }
+
+    // Criar novas pools para o destino
+    const newPools = pools.map(p => ({
+        user_id: p.user_id,
+        month: dstMonth,
+        week: dstWeek,
+        pool_name: p.pool_name,
+        // Valor atual da origem vira valor inicial do destino
+        initial_value: parseFloat(p.current_value || 0),
+        yield_percent: zeroProfit ? 0 : p.yield_percent,
+        contribution_value: 0,
+        reinvested_profit: 0,
+        profit_value: zeroProfit ? 0 : p.profit_value,
+        current_value: null, // Será preenchido quando houver dados
+        invested_value: parseFloat(p.current_value || 0)
+    }));
+
+    const { error: insertErr } = await supabaseAdmin.from('pool_data').insert(newPools);
+
+    if (insertErr) {
+        showToast('Erro ao copiar: ' + insertErr.message, 'error');
+        showLoading(false);
+        return;
+    }
+
+    showToast(`✅ ${newPools.length} pool(s) copiada(s) para ${dstMonth}/${dstWeek}!`, 'success');
+    closeModal('copy-week-modal');
+    await loadUserPools();
+    showLoading(false);
+});
 
 // =====================================================
 // AAVE

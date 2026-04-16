@@ -669,7 +669,8 @@ function getCurrentDashboardValues() {
     // Lucro da semana/mês: extrair da tabela de pools se disponível
     let lucroSemanal = 0;
     let lucroMensal  = 0;
-    let capitalTotal = 0;
+    let capitalTotal = 0;      // Capital real do usuário (aportes)
+    let reinvestidoTotal = 0;  // Lucro reinvestido
 
     // Tentar pegar de userPoolData (variável global do dashboard.js)
     if (typeof userPoolData !== 'undefined' && userPoolData.length) {
@@ -683,10 +684,12 @@ function getCurrentDashboardValues() {
                     const pr = parseFloat(p.profit_value || 0);
                     lucroMensal += pr;
 
-                    // Capital
+                    // Capital = initial + contribution (sem reinvestido)
                     const ini = parseFloat(p.initial_value || p.invested_value || 0);
                     const con = parseFloat(p.contribution_value || 0);
+                    const rp  = parseFloat(p.reinvested_profit || 0);
                     capitalTotal += ini + con;
+                    reinvestidoTotal += rp;
                 });
 
             // Lucro semanal: semana mais recente
@@ -703,8 +706,11 @@ function getCurrentDashboardValues() {
     const aaveWeth          = gv('aave-balance');
     const patrimonioTotal   = gv('total-pagando');
     const patrimonioLiquido = gv('total-sem-pagar');
+    const capitalInvestido  = gv('capital-investido');
+    const lucroReinvestido  = gv('lucro-reinvestido');
 
     // Rendimento % = lucroMensal / capitalTotal * 100
+    // (ROI sobre o capital real do usuário, não sobre o reinvestido)
     const rendimentoPct = capitalTotal > 0 ? (lucroMensal / capitalTotal) * 100 : 0;
 
     return {
@@ -714,6 +720,10 @@ function getCurrentDashboardValues() {
         patrimonioLiquido,
         lucroMensal,
         lucroSemanal,
+        capitalTotal,       // Capital real (aportes)
+        reinvestidoTotal,   // Lucro reinvestido
+        capitalInvestido,
+        lucroReinvestido,
         rendimentoPct
     };
 }

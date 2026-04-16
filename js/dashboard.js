@@ -177,8 +177,11 @@ function getPoolsValueForMonth(month) {
     return total;
 }
 
-// Retorna {capital, profit} separados para aplicar % só no lucro
+// Retorna {capital, reinvested, profit} separados para aplicar % só no lucro
 // Usa apenas a última semana como referência
+// Capital = initial_value + contribution_value (aporte real do usuário)
+// Reinvested = reinvested_profit (lucro reaplicado)
+// Profit = profit_value (lucro da semana)
 function getPoolsBreakdownForMonth(month) {
     const latestData = getLatestWeekData(month);
     const pos = {};
@@ -186,25 +189,29 @@ function getPoolsBreakdownForMonth(month) {
         const cur = parseFloat(p.current_value||0);
         const ini = parseFloat(p.initial_value||p.invested_value||0);
         const con = parseFloat(p.contribution_value||0);
+        const rp  = parseFloat(p.reinvested_profit||0);
         const pro = parseFloat(p.profit_value||0);
-        if (!pos[p.pool_name]) pos[p.pool_name] = { current:0, capital:0, profit:0 };
+        if (!pos[p.pool_name]) pos[p.pool_name] = { current:0, capital:0, reinvested:0, profit:0 };
         if (cur > 0) pos[p.pool_name].current = cur;
-        // Capital = valor investido (sem lucro)
+        // Capital = valor investido pelo usuário (sem lucro reinvestido)
         pos[p.pool_name].capital = ini + con;
+        pos[p.pool_name].reinvested = rp;
         pos[p.pool_name].profit  = pro;
     });
-    var capital = 0, profit = 0;
+    var capital = 0, reinvested = 0, profit = 0;
     Object.values(pos).forEach(function(p) {
-        // Se tiver current_value, estimar capital como current - profit
+        // Se tiver current_value, estimar capital como current - profit - reinvested
         if (p.current > 0) {
-            capital += Math.max(0, p.current - p.profit);
+            capital += Math.max(0, p.current - p.profit - p.reinvested);
+            reinvested += p.reinvested;
             profit  += p.profit;
         } else {
             capital += p.capital;
+            reinvested += p.reinvested;
             profit  += p.profit;
         }
     });
-    return { capital, profit };
+    return { capital, reinvested, profit };
 }
 
 function updateDashboardValues() {
@@ -214,11 +221,13 @@ function updateDashboardValues() {
     const share  = window.PROFIT_SHARE !== undefined ? window.PROFIT_SHARE : 50;
     const pct    = share / 100;
 
-    // Separar capital (100% do usuário) e lucro (dividido pela %)
+    // Separar capital (100% do usuário), reinvestido (100% do usuário) e lucro (dividido pela %)
     const bd      = getPoolsBreakdownForMonth(lm);
-    const poolsCapital = bd.capital;            // capital investido — 100% do usuário
-    const poolsProfit  = bd.profit;             // lucro — dividido pela %
-    const poolsUser    = poolsCapital + (poolsProfit * pct); // total real do usuário nas pools
+    const poolsCapital    = bd.capital;            // capital investido pelo usuário — 100%
+    const poolsReinvested = bd.reinvested;         // lucro reinvestido — 100%
+    const poolsProfit     = bd.profit;             // lucro da semana — dividido pela %
+    // Total real do usuário = capital + reinvestido + (lucro da semana × %)
+    const poolsUser = poolsCapital + poolsReinvested + (poolsProfit * pct);
 
     setVal('pools-balance',   poolsUser);
     setVal('aave-balance',    weth);
@@ -228,6 +237,9 @@ function updateDashboardValues() {
     setVal('total-balance',   weth + poolsUser);
     setVal('total-sem-pagar', weth - borrow + poolsUser);
     setVal('total-pagando',   weth + poolsUser);
+    // Novos valores para cards
+    setVal('capital-investido', poolsCapital);
+    setVal('lucro-reinvestido', poolsReinvested);
 
     const label = document.getElementById('current-month-label');
     const latestWeek = getLatestWeekForMonth(lm);
@@ -342,35 +354,41 @@ function renderWeeks(month) {
     }
 
     var weeks={};
-    mp.forEach(function(p) { var w=p.week||'Sem semana'; if(!weeks[w]) weeks[w]=[]; weeks[w].push(p); });
+    mp.forEach(function(p) { var w=p.week||'Semana'; if(!weeks[w]) weeks[w]=[]; weeks[w].push(p); });
     var wo=['Semana 1','Semana 2','Semana 3','Semana 4','Semana 5','Total do Mês'];
     var sw=Object.keys(weeks).sort(function(a,b) {
         var ia=wo.indexOf(a), ib=wo.indexOf(b);
         return (ia===-1?99:ia)-(ib===-1?99:ib);
     });
 
-    var mPos={}, monthTotalProfit=0;
+    var mPos={}, monthTotalProfit=0, monthTotalReinvested=0;
 
     sw.forEach(function(week) {
         var pools=weeks[week], wCard=document.createElement('div'); wCard.className='glass-card week-card';
-        var wProfit=0;
+        var wProfit=0, wReinvested=0;
         var rows=pools.map(function(p) {
             var ini=parseFloat(p.initial_value||p.invested_value||0);
             var con=parseFloat(p.contribution_value||0);
+            var rp=parseFloat(p.reinvested_profit||0);
             var yp=parseFloat(p.yield_percent||0);
             var pro=parseFloat(p.profit_value||0);
             var cur=parseFloat(p.current_value||0);
             wProfit+=pro; monthTotalProfit+=pro;
-            if (!mPos[p.pool_name]) mPos[p.pool_name]={current:0,fallback:0,capital:0,profit:0};
+            wReinvested+=rp; monthTotalReinvested+=rp;
+            if (!mPos[p.pool_name]) mPos[p.pool_name]={current:0,fallback:0,capital:0,reinvested:0,profit:0};
             if (cur>0) mPos[p.pool_name].current=cur;
-            mPos[p.pool_name].fallback=ini+con+pro;
+            mPos[p.pool_name].fallback=ini+con+rp+pro;
             mPos[p.pool_name].capital=Math.max(mPos[p.pool_name].capital,ini+con);
+            mPos[p.pool_name].reinvested+=rp;
             mPos[p.pool_name].profit+=pro;
-            var diff=cur>0?cur-(ini+con):pro;
+            var diff=cur>0?cur-(ini+con+rp):pro;
             var dt=cur>0?'<span style="color:'+(diff>=0?'#22c55e':'#ef4444')+';font-size:12px;">'+(diff>=0?'▲':'▼')+fmt(Math.abs(diff))+'</span>':'';
-            return '<tr><td>'+p.pool_name+'</td><td>'+fmt(ini+con)+'</td><td>'+(yp>0?yp.toFixed(2)+'%':'-')+'</td><td style="color:var(--success);">+'+fmt(pro)+'</td><td>'+(cur>0?fmt(cur)+' '+dt:fmt(ini+con+pro))+'</td></tr>';
+            var investedTotal=ini+con;
+            var reinvestedStr=rp>0?'<br><span style="color:#22c55e;font-size:11px;">(+'+fmt(rp)+' reinvestido)</span>':'';
+            return '<tr><td>'+p.pool_name+'</td><td>'+fmt(investedTotal)+reinvestedStr+'</td><td>'+(yp>0?yp.toFixed(2)+'%':'-')+'</td><td style="color:var(--success);">+'+fmt(pro)+'</td><td>'+(cur>0?fmt(cur)+' '+dt:fmt(ini+con+rp+pro))+'</td></tr>';
         }).join('');
-        wCard.innerHTML='<h4 style="margin-bottom:12px;">'+week+'</h4><table class="pools-table"><thead><tr><th>Pool</th><th>Investido</th><th>Rend.%</th><th>Lucro</th><th>Valor Atual</th></tr></thead><tbody>'+rows+'<tr style="font-weight:bold;border-top:2px solid var(--border-glass);"><td colspan="3">Total</td><td style="color:var(--success);">+'+fmt(wProfit)+'</td><td>-</td></tr></tbody></table>';
+        var reinvestedBadge=wReinvested>0?'<span style="margin-left:8px;padding:2px 8px;background:rgba(34,197,94,0.15);color:#22c55e;border-radius:10px;font-size:11px;">+'+fmt(wReinvested)+' reinvestido</span>':'';
+        wCard.innerHTML='<h4 style="margin-bottom:12px;">'+week+reinvestedBadge+'</h4><table class="pools-table"><thead><tr><th>Pool</th><th>Investido</th><th>Rend.%</th><th>Lucro</th><th>Valor Atual</th></tr></thead><tbody>'+rows+'<tr style="font-weight:bold;border-top:2px solid var(--border-glass);"><td colspan="3">Total</td><td style="color:var(--success);">+'+fmt(wProfit)+'</td><td>-</td></tr></tbody></table>';
         container.appendChild(wCard);
     });
 
@@ -382,39 +400,52 @@ function renderWeeks(month) {
     var usdto=parseFloat(aaveMes&&(aaveMes.usdto_value||aaveMes.borrow_value)||0);
 
     // Calcular valores apenas da última semana
-    var mPos={}, latestWeekProfit=0;
+    var mPos={}, latestWeekProfit=0, latestWeekReinvested=0;
     latestWeekPools.forEach(function(p){
         var ini=parseFloat(p.initial_value||p.invested_value||0);
         var con=parseFloat(p.contribution_value||0);
+        var rp=parseFloat(p.reinvested_profit||0);
         var cur=parseFloat(p.current_value||0);
         var pro=parseFloat(p.profit_value||0);
-        if (!mPos[p.pool_name]) mPos[p.pool_name]={current:0,fallback:0,capital:0,profit:0};
+        if (!mPos[p.pool_name]) mPos[p.pool_name]={current:0,fallback:0,capital:0,reinvested:0,profit:0};
         if (cur>0) mPos[p.pool_name].current=cur;
-        mPos[p.pool_name].fallback=ini+con+pro;
+        mPos[p.pool_name].fallback=ini+con+rp+pro;
         mPos[p.pool_name].capital=ini+con;
+        mPos[p.pool_name].reinvested=rp;
         mPos[p.pool_name].profit=pro;
         latestWeekProfit+=pro;
+        latestWeekReinvested+=rp;
     });
 
     var mpv=0;
     var mpvCapital=0;
+    var mpvReinvested=0;
     Object.values(mPos).forEach(function(p){
         var val = p.current>0 ? p.current : p.fallback;
         mpv += val;
-        mpvCapital += p.current>0 ? Math.max(0, p.current - p.profit) : (p.capital||0);
+        mpvCapital += p.capital || 0;
+        mpvReinvested += p.reinvested || 0;
     });
 
-        var profitShare   = window.PROFIT_SHARE !== undefined ? window.PROFIT_SHARE : 50;
-    var mpvProfit     = mpv - mpvCapital;
+    var profitShare   = window.PROFIT_SHARE !== undefined ? window.PROFIT_SHARE : 50;
+    var mpvProfit     = mpv - mpvCapital - mpvReinvested;
     var myShareProfit = mpvProfit * (profitShare / 100);
-    var myShareValue  = mpvCapital + myShareProfit;
+    var myShareValue  = mpvCapital + mpvReinvested + myShareProfit;
+    var totalInvestido = mpvCapital + mpvReinvested;
+    // Lucro Total = Lucro Reinvestido + Lucro da Semana
+    var lucroTotal = monthTotalReinvested + latestWeekProfit;
+    // Sua parte do Lucro Total = Reinvestido (100%) + (Lucro Semana × %)
+    var lucroTotalUser = monthTotalReinvested + (latestWeekProfit * (profitShare / 100));
 
-var sum=document.createElement('div'); sum.className='glass-card';
+    var sum=document.createElement('div'); sum.className='glass-card';
     sum.style.cssText='margin-top:24px;border:1px solid rgba(168,85,247,0.3);';
     sum.innerHTML='<h3 style="margin-bottom:20px;color:var(--neon-purple,#a855f7);">📊 Resumo — '+month+' <span style="font-size:13px;color:var(--text-muted);font-weight:normal;">('+latestWeekForResumo+')</span></h3>'
         +'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:'+(weth>0?'20px':'0')+';">'
-        +'<div<div style="text-align:center;padding:12px;background:rgba(168,85,247,0.1);border-radius:12px;"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Valor Atual Pools</p><p style="font-size:20px;font-weight:700;">'+fmt(mpv)+'</p></div>'
-        +'<div style="text-align:center;padding:12px;background:rgba(34,197,94,0.1);border-radius:12px;"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Lucro '+latestWeekForResumo+'</p><p style="font-size:20px;font-weight:700;color:#22c55e;">+'+fmt(latestWeekProfit)+'</p><div style="margin-top:10px;padding:8px 12px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.35);border-radius:8px;"><p style="font-size:11px;color:rgba(34,197,94,0.7);margin-bottom:2px;">Sua parte ('+profitShare.toFixed(0)+'%)</p><p style="font-size:18px;font-weight:700;color:#22c55e;">+'+fmt(myShareProfit)+'</p></div></div>'
+        +'<div style="text-align:center;padding:12px;background:rgba(168,85,247,0.1);border-radius:12px;"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Valor Atual Pools</p><p style="font-size:20px;font-weight:700;">'+fmt(mpv)+'</p></div>'
+        +'<div style="text-align:center;padding:12px;background:rgba(34,197,94,0.1);border-radius:12px;"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Lucro '+latestWeekForResumo+'</p><p style="font-size:20px;font-weight:700;color:#22c55e;">+'+fmt(latestWeekProfit)+'</p></div>'
+        +'<div style="text-align:center;padding:12px;background:rgba(59,130,246,0.1);border-radius:12px;"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Lucro Reinvestido</p><p style="font-size:20px;font-weight:700;color:#3b82f6;">'+fmt(monthTotalReinvested)+'</p></div>'
+        +'<div style="text-align:center;padding:12px;background:rgba(251,191,36,0.1);border-radius:12px;"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Capital Total</p><p style="font-size:20px;font-weight:700;color:#fbbf24;">'+fmt(totalInvestido)+'</p><p style="font-size:11px;color:var(--text-muted);margin-top:2px;">Aporte + Reinvestido</p></div>'
+        +'<div style="text-align:center;padding:12px;background:rgba(34,197,94,0.15);border-radius:12px;border:1px solid rgba(34,197,94,0.25);"><p style="color:var(--text-muted);font-size:12px;margin-bottom:4px;">Lucro Total</p><p style="font-size:20px;font-weight:700;color:#22c55e;">+'+fmt(lucroTotal)+'</p><div style="margin-top:10px;padding:8px 12px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.35);border-radius:8px;"><p style="font-size:11px;color:rgba(34,197,94,0.7);margin-bottom:2px;">Sua parte ('+profitShare.toFixed(0)+'%)</p><p style="font-size:18px;font-weight:700;color:#22c55e;">+'+fmt(lucroTotalUser)+'</p></div></div>'
         +'</div>'
         +(weth>0
             ?'<div style="padding-top:16px;border-top:1px solid var(--border-glass);"><h4 style="margin-bottom:12px;color:var(--text-secondary);">Total com AAVE ('+month+')</h4>'

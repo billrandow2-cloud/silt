@@ -85,10 +85,40 @@ CREATE TABLE pool_data (
     month TEXT NOT NULL,
     week TEXT NOT NULL,
     pool_name TEXT NOT NULL,
-    invested_value DECIMAL(15, 2) DEFAULT 0,
+    initial_value DECIMAL(15, 2) DEFAULT 0,
+    yield_percent DECIMAL(5, 2) DEFAULT 0,
+    contribution_value DECIMAL(15, 2) DEFAULT 0,
+    reinvested_profit DECIMAL(15, 2) DEFAULT 0,
     profit_value DECIMAL(15, 2) DEFAULT 0,
+    current_value DECIMAL(15, 2) DEFAULT 0,
+    invested_value DECIMAL(15, 2) DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+### Schema da Tabela pool_data
+
+| Campo | Tipo | Descrição |
+|-------|------|------------|
+| `id` | UUID | Primary key |
+| `user_id` | UUID | FK → users.id |
+| `month` | TEXT | Mês (Janeiro, Fevereiro...) |
+| `week` | TEXT | Semana (Semana 1, 2, 3...) |
+| `pool_name` | TEXT | Nome da pool |
+| `initial_value` | DECIMAL(15,2) | Valor inicial da semana |
+| `yield_percent` | DECIMAL(5,2) | Rendimento % |
+| `contribution_value` | DECIMAL(15,2) | Aporte adicional do usuário |
+| `reinvested_profit` | DECIMAL(15,2) | Lucro reaplicado na pool |
+| `profit_value` | DECIMAL(15,2) | Lucro da semana |
+| `current_value` | DECIMAL(15,2) | Valor atual da pool |
+| `invested_value` | DECIMAL(15,2) | Legacy: initial + contribution |
+| `created_at` | TIMESTAMP | Data criação |
+
+#### Cálculos
+
+- **Capital do Usuário** = `initial_value` + `contribution_value`
+- **Total Investido** = Capital + `reinvested_profit`
+- **Patrimônio** = `current_value` OU (Total Investido + `profit_value`)
+- **ROI** = `profit_value` / Capital × 100
 
 -- Tabela de dados AAVE
 CREATE TABLE aave_data (

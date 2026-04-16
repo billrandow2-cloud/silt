@@ -95,8 +95,8 @@
           </div>
         </div>
         <div class="data-table-container"><table class="data-table">
-          <thead><tr><th>Usuário</th><th>Mês</th><th>Semana</th><th>Pool</th><th>Inicial</th><th>Rend.%</th><th>Aporte</th><th>Lucro</th><th>Valor Atual</th><th>Ações</th></tr></thead>
-          <tbody id="pools-table-body"><tr><td colspan="10" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr></tbody>
+          <thead><tr><th>Usuário</th><th>Mês</th><th>Semana</th><th>Pool</th><th>Inicial</th><th>Rend.%</th><th>Aporte</th><th>Reinvestido</th><th>Lucro</th><th>Valor Atual</th><th>Ações</th></tr></thead>
+          <tbody id="pools-table-body"><tr><td colspan="11" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr></tbody>
         </table></div>
       </div>
 
@@ -316,7 +316,8 @@
     <div class="form-group"><label>Pool *</label><input type="text" id="pool-name" required placeholder="Ex: A/DAI, WETH/USDT..."></div>
     <div class="form-group"><label>Valor Inicial (USD)</label><input type="number" id="pool-initial" step="0.01" min="0" placeholder="Ex: 266.00"></div>
     <div class="form-group"><label>Rendimento (%)</label><input type="number" id="pool-yield" step="0.01" placeholder="Ex: 2.50"></div>
-    <div class="form-group"><label>Aporte Adicional (USD)</label><input type="number" id="pool-contribution" step="0.01" min="0" placeholder="Ex: 0.00"></div>
+    <div class="form-group"><label>Aporte Adicional (USD)</label><input type="number" id="pool-contribution" step="0.01" min="0" placeholder="Ex: 0.00"><small style="color:var(--text-muted);font-size:11px;display:block;margin-top:2px;">Novo dinheiro investido pelo usuário</small></div>
+    <div class="form-group"><label>Lucro Reinvestido (USD)</label><input type="number" id="pool-reinvested" step="0.01" min="0" placeholder="Ex: 0.00"><small style="color:var(--text-muted);font-size:11px;display:block;margin-top:2px;">Lucro acumulado que foi reaplicado na pool</small></div>
     <div class="form-group"><label>Lucro da Semana (USD)</label><input type="number" id="pool-profit" step="0.01" placeholder="Ex: 14.55"></div>
     <div class="form-group"><label>Valor Atual da Pool (USD)</label><input type="number" id="pool-current" step="0.01" min="0" placeholder="Ex: 272.00"></div>
     <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('add-pool-modal')">Cancelar</button><button type="submit" class="neon-btn">Adicionar</button></div>
@@ -331,7 +332,8 @@
     <div class="form-group"><label>Pool *</label><input type="text" id="edit-pool-name" required></div>
     <div class="form-group"><label>Valor Inicial (USD)</label><input type="number" id="edit-pool-initial" step="0.01" min="0"></div>
     <div class="form-group"><label>Rendimento (%)</label><input type="number" id="edit-pool-yield" step="0.01"></div>
-    <div class="form-group"><label>Aporte Adicional (USD)</label><input type="number" id="edit-pool-contribution" step="0.01" min="0"></div>
+    <div class="form-group"><label>Aporte Adicional (USD)</label><input type="number" id="edit-pool-contribution" step="0.01" min="0"><small style="color:var(--text-muted);font-size:11px;display:block;margin-top:2px;">Novo dinheiro investido pelo usuário</small></div>
+    <div class="form-group"><label>Lucro Reinvestido (USD)</label><input type="number" id="edit-pool-reinvested" step="0.01" min="0"><small style="color:var(--text-muted);font-size:11px;display:block;margin-top:2px;">Lucro acumulado que foi reaplicado na pool</small></div>
     <div class="form-group"><label>Lucro da Semana (USD)</label><input type="number" id="edit-pool-profit" step="0.01"></div>
     <div class="form-group"><label>Valor Atual da Pool (USD)</label><input type="number" id="edit-pool-current" step="0.01" min="0"></div>
     <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('edit-pool-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
