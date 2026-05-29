@@ -22,7 +22,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     document.getElementById('admin-avatar').textContent = username.charAt(0).toUpperCase();
     await loadUsers();
-    await loadRankingAdmin();
 });
 
 // =====================================================
@@ -598,112 +597,6 @@ document.getElementById('add-aave-form')?.addEventListener('submit', async (e) =
     showLoading(false);
 });
 
-// =====================================================
-// RANKING — sistema de pontuação 0 a 10
-// =====================================================
-async function loadRankingAdmin() {
-    const mf=document.getElementById('ranking-month-filter')?.value;
-    const wf=document.getElementById('ranking-week-filter')?.value;
-    const tbody=document.getElementById('ranking-table-body');
-    showLoading(true);
-    let query=supabaseAdmin.from('rankings').select('*').order('month').order('week').order('points',{ascending:false});
-    if (mf) query=query.eq('month',mf); if (wf) query=query.eq('week',wf);
-    const { data, error }=await query; showLoading(false);
-    if (error) { showToast('Erro: '+error.message,'error'); return; }
-    tbody.innerHTML='';
-    if (!data?.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Nenhum dado</td></tr>'; return; }
-
-    // Líder por semana = maior pontuação
-    const leaders={};
-    data.forEach(r=>{ const k=r.month+'||'+r.week; if(!leaders[k]||r.points>leaders[k]) leaders[k]=r.points; });
-
-    data.forEach(r=>{
-        const pts = parseFloat(r.points || 0);
-        const isL = pts === leaders[r.month+'||'+r.week];
-
-        // Cor visual conforme faixa
-        const color = pts>=8?'#22c55e' : pts>=6?'#3b82f6' : pts>=4?'#a855f7' : pts>=2?'#f59e0b' : '#ef4444';
-
-        // Formatar datas do período
-        const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : null;
-        const ws = fmtDate(r.week_start), we = fmtDate(r.week_end);
-        const periodo = ws && we ? `<span style="font-size:11px;color:var(--text-muted);display:block;margin-top:2px;">${ws} → ${we}</span>` : '';
-        const row=document.createElement('tr');
-        row.innerHTML=`
-            <td><span style="font-weight:500;">${r.month}</span>${periodo}</td>
-            <td>${r.week}</td>
-            <td style="font-weight:${isL?700:400};color:${isL?'#fbbf24':'inherit'};">${isL?'🏆 ':''}${r.username}</td>
-            <td>
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <div style="flex:1;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
-                        <div style="height:100%;width:${pts*10}%;background:${color};border-radius:4px;transition:width 0.5s ease;"></div>
-                    </div>
-                    <span style="font-size:16px;font-weight:700;color:${color};min-width:40px;">${pts.toFixed(1)}</span>
-                    <span style="font-size:11px;color:var(--text-muted);">/10</span>
-                </div>
-            </td>
-            <td class="actions" style="vertical-align:middle;white-space:nowrap;">
-                <button class="edit"   onclick="openEditRanking('${r.id}','${r.month}','${r.week}','${r.username}',${parseFloat(r.points_start||0)},${parseFloat(r.points_end||pts)},'${r.week_start||''}','${r.week_end||''}')">✏️</button>
-                <button class="delete" onclick="deleteRanking('${r.id}')">🗑️</button>
-            </td>`;
-        tbody.appendChild(row);
-    });
-}
-
-document.getElementById('add-ranking-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const month        = document.getElementById('ranking-month').value;
-    const week         = document.getElementById('ranking-week').value;
-    const week_start   = document.getElementById('ranking-week-start').value || null;
-    const week_end     = document.getElementById('ranking-week-end').value   || null;
-    const username     = document.getElementById('ranking-username').value.trim();
-    const points_start   = Math.min(10, Math.max(0, parseFloat(document.getElementById('ranking-points-start').value)||0));
-    const _endRaw          = document.getElementById('ranking-points-end').value;
-    const points_end       = _endRaw !== '' ? Math.min(10, Math.max(0, parseFloat(_endRaw)||0)) : null;
-    const points           = points_end !== null ? points_end : points_start;
-    showLoading(true);
-    const { data: ex } = await supabaseAdmin.from('rankings').select('id').eq('month',month).eq('week',week).eq('username',username).limit(1).single();
-    const result = ex
-        ? await supabaseAdmin.from('rankings').update({points, points_start, points_end, week_start, week_end}).eq('id',ex.id)
-        : await supabaseAdmin.from('rankings').insert([{month,week,username,points,points_start,points_end,week_start,week_end}]);
-    if (result.error) { showToast('Erro: '+result.error.message,'error'); showLoading(false); return; }
-    showToast(`"${username}" → ${points.toFixed(1)} pontos!`,'success');
-    closeModal('add-ranking-modal'); await loadRankingAdmin(); showLoading(false);
-});
-
-function openEditRanking(id,month,week,username,pStart,pEnd,weekStart,weekEnd) {
-    document.getElementById('edit-ranking-id').value              = id;
-    document.getElementById('edit-ranking-month').value           = month;
-    document.getElementById('edit-ranking-week').value            = week;
-    document.getElementById('edit-ranking-username').value        = username;
-    document.getElementById('edit-ranking-points-start').value    = pStart;
-    document.getElementById('edit-ranking-points-end').value      = pEnd;
-    document.getElementById('edit-ranking-week-start').value      = weekStart || '';
-    document.getElementById('edit-ranking-week-end').value        = weekEnd   || '';
-    openModal('edit-ranking-modal');
-}
-
-document.getElementById('edit-ranking-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id           = document.getElementById('edit-ranking-id').value;
-    const points_start    = Math.min(10, Math.max(0, parseFloat(document.getElementById('edit-ranking-points-start').value)||0));
-    const _endRawE         = document.getElementById('edit-ranking-points-end').value;
-    const points_end       = _endRawE !== '' ? Math.min(10, Math.max(0, parseFloat(_endRawE)||0)) : null;
-    const points           = points_end !== null ? points_end : points_start;
-    const week_start   = document.getElementById('edit-ranking-week-start').value || null;
-    const week_end     = document.getElementById('edit-ranking-week-end').value   || null;
-    showLoading(true);
-    const { error } = await supabaseAdmin.from('rankings').update({points, points_start, points_end, week_start, week_end}).eq('id',id);
-    if (error) { showToast('Erro: '+error.message,'error'); showLoading(false); return; }
-    showToast(`Pontuação → ${points.toFixed(1)}!`,'success'); closeModal('edit-ranking-modal'); await loadRankingAdmin(); showLoading(false);
-});
-
-async function deleteRanking(id) {
-    if (!confirm('Remover?')) return; showLoading(true);
-    const { error } = await supabaseAdmin.from('rankings').delete().eq('id',id);
-    if (error) { showToast('Erro: '+error.message,'error'); showLoading(false); return; }
-    showToast('Removido!','success'); await loadRankingAdmin(); showLoading(false);
-}
 
 // =====================================================
 // MENSAGENS DE BOAS-VINDAS
@@ -838,7 +731,6 @@ document.getElementById('edit-message-form')?.addEventListener('submit', async (
 function showAdminSection(s) {
     document.querySelectorAll('.admin-menu button').forEach(b=>b.classList.toggle('active',b.dataset.section===s));
     document.querySelectorAll('.admin-section').forEach(x=>x.classList.toggle('active',x.id===`admin-${s}`));
-    if (s==='ranking') loadRankingAdmin();
 }
 function openModal(id)  { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); document.getElementById(id)?.querySelector('form')?.reset(); }
