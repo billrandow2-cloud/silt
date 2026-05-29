@@ -22,7 +22,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     document.getElementById('admin-avatar').textContent = username.charAt(0).toUpperCase();
     await loadUsers();
-    await loadRankingAdmin();
 });
 
 // =====================================================
@@ -77,7 +76,7 @@ function renderUsersTable() {
 }
 
 function populateUserSelects() {
-    ['pool-user','aave-user','pool-user-filter','aave-user-filter','cw-src-user'].forEach(id => {
+    ['pool-user','aave-user','pool-user-filter','aave-user-filter','message-user','msg-user-filter'].forEach(id => {
         const sel = document.getElementById(id); if (!sel) return;
         const first = sel.options[0]; sel.innerHTML = ''; sel.appendChild(first);
         allUsers.forEach(u => { const o = document.createElement('option'); o.value = u.id; o.textContent = u.username; sel.appendChild(o); });
@@ -208,17 +207,18 @@ async function loadUserPools() {
     const { data: pools, error } = await query;
     if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
     tbody.innerHTML = '';
-    if (!pools?.length) { tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--text-secondary);">Nenhum dado</td></tr>'; showLoading(false); return; }
+    if (!pools?.length) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--text-secondary);">Nenhum dado</td></tr>'; showLoading(false); return; }
     pools.forEach(pool => {
         const ini = parseFloat(pool.initial_value ?? pool.invested_value ?? 0);
         const y   = parseFloat(pool.yield_percent ?? 0);
         const c   = parseFloat(pool.contribution_value ?? 0);
+        const rp  = parseFloat(pool.reinvested_profit ?? 0);
         const p   = parseFloat(pool.profit_value ?? 0);
         const cu  = parseFloat(pool.current_value ?? 0);
-        const d   = cu > 0 ? cu - ini : p;
+        const d   = cu > 0 ? cu - ini - rp : p;
         const tag = cu > 0 ? `<span style="color:${d>=0?'#22c55e':'#ef4444'};font-size:11px;">${d>=0?'▲':'▼'}$${Math.abs(d).toFixed(2)}</span>` : '';
         const row = document.createElement('tr');
-        row.innerHTML = `<td>${pool.users?.username||'-'}</td><td>${pool.month}</td><td>${pool.week}</td><td>${pool.pool_name}</td><td>$${ini.toFixed(2)}</td><td>${y>0?y.toFixed(2)+'%':'-'}</td><td>${c>0?'$'+c.toFixed(2):'-'}</td><td style="color:var(--success);">+$${p.toFixed(2)}</td><td>${cu>0?'$'+cu.toFixed(2)+' '+tag:'-'}</td><td class="actions"><button onclick="copyPool('${pool.id}')" title="Copiar pool" style="background:rgba(59,130,246,0.15);color:#3b82f6;border-radius:6px;padding:6px;border:none;cursor:pointer;font-size:14px;">📋</button><button class="edit" onclick="openEditPool('${pool.id}','${pool.month}','${pool.week}','${pool.pool_name}',${ini},${y},${c},${p},${cu})">✏️</button><button class="delete" onclick="deletePool('${pool.id}')">🗑️</button></td>`;
+        row.innerHTML = `<td>${pool.users?.username||'-'}</td><td>${pool.month}</td><td>${pool.week}</td><td>${pool.pool_name}</td><td>$${ini.toFixed(2)}</td><td>${y>0?y.toFixed(2)+'%':'-'}</td><td>${c>0?'$'+c.toFixed(2):'-'}</td><td style="color:#22c55e;">${rp>0?'$'+rp.toFixed(2):'-'}</td><td style="color:var(--success);">+$${p.toFixed(2)}</td><td>${cu>0?'$'+cu.toFixed(2)+' '+tag:'-'}</td><td class="actions"><button onclick="copyPool('${pool.id}')" title="Copiar pool" style="background:rgba(59,130,246,0.15);color:#3b82f6;border-radius:6px;padding:6px;border:none;cursor:pointer;font-size:14px;">📋</button><button class="edit" onclick="openEditPool('${pool.id}','${pool.month}','${pool.week}','${pool.pool_name}',${ini},${y},${c},${rp},${p},${cu})">✏️</button><button class="delete" onclick="deletePool('${pool.id}')">🗑️</button></td>`;
         tbody.appendChild(row);
     });
     showLoading(false);
@@ -227,24 +227,24 @@ async function loadUserPools() {
 document.getElementById('add-pool-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const i=parseFloat(document.getElementById('pool-initial').value)||0, y=parseFloat(document.getElementById('pool-yield').value)||0;
-    const c=parseFloat(document.getElementById('pool-contribution').value)||0, p=parseFloat(document.getElementById('pool-profit').value)||0, cu=parseFloat(document.getElementById('pool-current').value)||0;
+    const c=parseFloat(document.getElementById('pool-contribution').value)||0, rp=parseFloat(document.getElementById('pool-reinvested').value)||0, p=parseFloat(document.getElementById('pool-profit').value)||0, cu=parseFloat(document.getElementById('pool-current').value)||0;
     showLoading(true);
-    const { error } = await supabaseAdmin.from('pool_data').insert([{ user_id:document.getElementById('pool-user').value, month:document.getElementById('pool-month').value, week:document.getElementById('pool-week').value, pool_name:document.getElementById('pool-name').value, initial_value:i, yield_percent:y, contribution_value:c, profit_value:p, current_value:cu, invested_value:i+c }]);
+    const { error } = await supabaseAdmin.from('pool_data').insert([{ user_id:document.getElementById('pool-user').value, month:document.getElementById('pool-month').value, week:document.getElementById('pool-week').value, pool_name:document.getElementById('pool-name').value, initial_value:i, yield_percent:y, contribution_value:c, reinvested_profit:rp, profit_value:p, current_value:cu, invested_value:i+c }]);
     if (error) { showToast('Erro: '+error.message,'error'); showLoading(false); return; }
     showToast('Pool adicionada!','success'); closeModal('add-pool-modal'); await loadUserPools(); showLoading(false);
 });
 
-function openEditPool(id,month,week,name,ini,y,c,p,cu) {
-    document.getElementById('edit-pool-id').value=id; document.getElementById('edit-pool-month').value=month; document.getElementById('edit-pool-week').value=week; document.getElementById('edit-pool-name').value=name; document.getElementById('edit-pool-initial').value=ini; document.getElementById('edit-pool-yield').value=y; document.getElementById('edit-pool-contribution').value=c; document.getElementById('edit-pool-profit').value=p; document.getElementById('edit-pool-current').value=cu;
+function openEditPool(id,month,week,name,ini,y,c,rp,p,cu) {
+    document.getElementById('edit-pool-id').value=id; document.getElementById('edit-pool-month').value=month; document.getElementById('edit-pool-week').value=week; document.getElementById('edit-pool-name').value=name; document.getElementById('edit-pool-initial').value=ini; document.getElementById('edit-pool-yield').value=y; document.getElementById('edit-pool-contribution').value=c; document.getElementById('edit-pool-reinvested').value=rp; document.getElementById('edit-pool-profit').value=p; document.getElementById('edit-pool-current').value=cu;
     openModal('edit-pool-modal');
 }
 
 document.getElementById('edit-pool-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const i=parseFloat(document.getElementById('edit-pool-initial').value)||0, y=parseFloat(document.getElementById('edit-pool-yield').value)||0;
-    const c=parseFloat(document.getElementById('edit-pool-contribution').value)||0, p=parseFloat(document.getElementById('edit-pool-profit').value)||0, cu=parseFloat(document.getElementById('edit-pool-current').value)||0;
+    const c=parseFloat(document.getElementById('edit-pool-contribution').value)||0, rp=parseFloat(document.getElementById('edit-pool-reinvested').value)||0, p=parseFloat(document.getElementById('edit-pool-profit').value)||0, cu=parseFloat(document.getElementById('edit-pool-current').value)||0;
     showLoading(true);
-    const { error } = await supabaseAdmin.from('pool_data').update({ month:document.getElementById('edit-pool-month').value, week:document.getElementById('edit-pool-week').value, pool_name:document.getElementById('edit-pool-name').value, initial_value:i, yield_percent:y, contribution_value:c, profit_value:p, current_value:cu, invested_value:i+c }).eq('id', document.getElementById('edit-pool-id').value);
+    const { error } = await supabaseAdmin.from('pool_data').update({ month:document.getElementById('edit-pool-month').value, week:document.getElementById('edit-pool-week').value, pool_name:document.getElementById('edit-pool-name').value, initial_value:i, yield_percent:y, contribution_value:c, reinvested_profit:rp, profit_value:p, current_value:cu, invested_value:i+c }).eq('id', document.getElementById('edit-pool-id').value);
     if (error) { showToast('Erro: '+error.message,'error'); showLoading(false); return; }
     showToast('Pool atualizada!','success'); closeModal('edit-pool-modal'); await loadUserPools(); showLoading(false);
 });
@@ -271,6 +271,7 @@ async function copyPool(poolId) {
         initial_value: pool.initial_value,
         yield_percent: pool.yield_percent,
         contribution_value: pool.contribution_value,
+        reinvested_profit: pool.reinvested_profit || 0,
         profit_value: pool.profit_value,
         current_value: pool.current_value,
         invested_value: pool.invested_value
@@ -283,6 +284,150 @@ async function copyPool(poolId) {
     await loadUserPools();
     showLoading(false);
 }
+
+// ─── COPIAR SEMANA INTEIRA ───────────────────────────────
+function openCopyWeekModal() {
+    // Popular select de usuários
+    const srcUserSel = document.getElementById('cw-src-user');
+    srcUserSel.innerHTML = '<option value="">Selecione...</option>';
+    allUsers.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.id;
+        opt.textContent = u.username;
+        srcUserSel.appendChild(opt);
+    });
+
+    // Limpar preview
+    document.getElementById('cw-preview').innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;">Selecione usuário, mês e semana para ver o preview.</p>';
+
+    // Resetar formulário
+    document.getElementById('copy-week-form').reset();
+
+    openModal('copy-week-modal');
+}
+
+async function previewCopyWeek() {
+    const userId = document.getElementById('cw-src-user').value;
+    const month = document.getElementById('cw-src-month').value;
+    const week = document.getElementById('cw-src-week').value;
+    const zeroProfit = document.getElementById('cw-zero-profit').checked;
+    const previewDiv = document.getElementById('cw-preview');
+
+    if (!userId || !month || !week) {
+        previewDiv.innerHTML = '<p style="color:var(--text-muted);font-size:13px;text-align:center;">Selecione usuário, mês e semana para ver o preview.</p>';
+        return;
+    }
+
+    showLoading(true);
+    const { data: pools, error } = await supabaseAdmin.from('pool_data')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('month', month)
+        .eq('week', week);
+
+    showLoading(false);
+
+    if (error || !pools?.length) {
+        previewDiv.innerHTML = '<p style="color:#ef4444;font-size:13px;text-align:center;">Nenhuma pool encontrada para esta semana.</p>';
+        return;
+    }
+
+    const f = v => '$' + (parseFloat(v || 0)).toFixed(2);
+    let html = `<table style="width:100%;font-size:12px;border-collapse:collapse;">
+        <tr style="color:var(--text-muted);border-bottom:1px solid var(--border-glass);">
+            <th style="padding:6px;text-align:left;">Pool</th>
+            <th style="padding:6px;text-align:right;">Atual</th>
+            <th style="padding:6px;text-align:right;">→ Inicial</th>
+            <th style="padding:6px;text-align:right;">Aporte</th>
+            <th style="padding:6px;text-align:right;">Reinvest.</th>
+            <th style="padding:6px;text-align:right;">Lucro</th>
+        </tr>`;
+
+    pools.forEach(p => {
+        const currentVal = parseFloat(p.current_value || 0);
+        const contributionVal = parseFloat(p.contribution_value || 0);
+        const reinvestedVal = parseFloat(p.reinvested_profit || 0);
+        const profitVal = zeroProfit ? 0 : parseFloat(p.profit_value || 0);
+
+        html += `<tr>
+            <td style="padding:6px;">${p.pool_name}</td>
+            <td style="padding:6px;text-align:right;">${f(currentVal)}</td>
+            <td style="padding:6px;text-align:right;color:#22c55e;">${f(currentVal)}</td>
+            <td style="padding:6px;text-align:right;color:var(--text-muted);">0</td>
+            <td style="padding:6px;text-align:right;color:var(--text-muted);">0</td>
+            <td style="padding:6px;text-align:right;color:${zeroProfit ? 'var(--text-muted)' : 'var(--success)'};">${f(profitVal)}</td>
+        </tr>`;
+    });
+
+    html += '</table>';
+    html += `<p style="margin-top:10px;font-size:11px;color:var(--text-muted);">
+        ${zeroProfit ? '✓ Lucro e rendimento serão zerados' : '○ Lucro e rendimento serão mantidos'}
+        <br>• Valor Atual → Valor Inicial do destino
+        <br>• Aporte = 0, Reinvestido = 0 (nova semana)
+    </p>`;
+
+    previewDiv.innerHTML = html;
+}
+
+document.getElementById('copy-week-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const userId = document.getElementById('cw-src-user').value;
+    const srcMonth = document.getElementById('cw-src-month').value;
+    const srcWeek = document.getElementById('cw-src-week').value;
+    const dstMonth = document.getElementById('cw-dst-month').value;
+    const dstWeek = document.getElementById('cw-dst-week').value;
+    const zeroProfit = document.getElementById('cw-zero-profit').checked;
+
+    if (!userId || !srcMonth || !srcWeek || !dstMonth || !dstWeek) {
+        showToast('Preencha todos os campos.', 'error');
+        return;
+    }
+
+    showLoading(true);
+
+    // Buscar pools da semana origem
+    const { data: pools, error: fetchErr } = await supabaseAdmin.from('pool_data')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('month', srcMonth)
+        .eq('week', srcWeek);
+
+    if (fetchErr || !pools?.length) {
+        showToast('Nenhuma pool encontrada na origem.', 'error');
+        showLoading(false);
+        return;
+    }
+
+    // Criar novas pools para o destino
+    const newPools = pools.map(p => ({
+        user_id: p.user_id,
+        month: dstMonth,
+        week: dstWeek,
+        pool_name: p.pool_name,
+        // Valor atual da origem vira valor inicial do destino
+        initial_value: parseFloat(p.current_value || 0),
+        yield_percent: zeroProfit ? 0 : p.yield_percent,
+        contribution_value: 0,
+        reinvested_profit: 0,
+        profit_value: zeroProfit ? 0 : p.profit_value,
+        current_value: null, // Será preenchido quando houver dados
+        invested_value: parseFloat(p.current_value || 0)
+    }));
+
+    const { error: insertErr } = await supabaseAdmin.from('pool_data').insert(newPools);
+
+    if (insertErr) {
+        showToast('Erro ao copiar: ' + insertErr.message, 'error');
+        showLoading(false);
+        return;
+    }
+
+    showToast(`✅ ${newPools.length} pool(s) copiada(s) para ${dstMonth}/${dstWeek}!`, 'success');
+    closeModal('copy-week-modal');
+    await loadUserPools();
+    showLoading(false);
+});
 
 // =====================================================
 // AAVE
@@ -452,112 +597,133 @@ document.getElementById('add-aave-form')?.addEventListener('submit', async (e) =
     showLoading(false);
 });
 
+
 // =====================================================
-// RANKING — sistema de pontuação 0 a 10
+// MENSAGENS DE BOAS-VINDAS
 // =====================================================
-async function loadRankingAdmin() {
-    const mf=document.getElementById('ranking-month-filter')?.value;
-    const wf=document.getElementById('ranking-week-filter')?.value;
-    const tbody=document.getElementById('ranking-table-body');
+let currentMessageData = null;
+
+async function loadUserMessage() {
+    const userId    = document.getElementById('msg-user-filter').value;
+    const display   = document.getElementById('msg-display');
+    const empty     = document.getElementById('msg-empty');
+    const placeholder = document.getElementById('msg-placeholder');
+
+    display.style.display     = 'none';
+    empty.style.display       = 'none';
+    placeholder.style.display = 'block';
+
+    if (!userId) return;
+
+    placeholder.style.display = 'none';
     showLoading(true);
-    let query=supabaseAdmin.from('rankings').select('*').order('month').order('week').order('points',{ascending:false});
-    if (mf) query=query.eq('month',mf); if (wf) query=query.eq('week',wf);
-    const { data, error }=await query; showLoading(false);
-    if (error) { showToast('Erro: '+error.message,'error'); return; }
-    tbody.innerHTML='';
-    if (!data?.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Nenhum dado</td></tr>'; return; }
 
-    // Líder por semana = maior pontuação
-    const leaders={};
-    data.forEach(r=>{ const k=r.month+'||'+r.week; if(!leaders[k]||r.points>leaders[k]) leaders[k]=r.points; });
+    const { data, error } = await supabaseAdmin
+        .from('user_messages')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
-    data.forEach(r=>{
-        const pts = parseFloat(r.points || 0);
-        const isL = pts === leaders[r.month+'||'+r.week];
+    showLoading(false);
+    currentMessageData = data || null;
 
-        // Cor visual conforme faixa
-        const color = pts>=8?'#22c55e' : pts>=6?'#3b82f6' : pts>=4?'#a855f7' : pts>=2?'#f59e0b' : '#ef4444';
+    if (error || !data) {
+        empty.style.display = 'block';
+        // Pré-selecionar o usuário no modal de criação
+        const msgUserSel = document.getElementById('message-user');
+        if (msgUserSel) msgUserSel.value = userId;
+        return;
+    }
 
-        // Formatar datas do período
-        const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : null;
-        const ws = fmtDate(r.week_start), we = fmtDate(r.week_end);
-        const periodo = ws && we ? `<span style="font-size:11px;color:var(--text-muted);display:block;margin-top:2px;">${ws} → ${we}</span>` : '';
-        const row=document.createElement('tr');
-        row.innerHTML=`
-            <td><span style="font-weight:500;">${r.month}</span>${periodo}</td>
-            <td>${r.week}</td>
-            <td style="font-weight:${isL?700:400};color:${isL?'#fbbf24':'inherit'};">${isL?'🏆 ':''}${r.username}</td>
-            <td>
-                <div style="display:flex;align-items:center;gap:10px;">
-                    <div style="flex:1;height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
-                        <div style="height:100%;width:${pts*10}%;background:${color};border-radius:4px;transition:width 0.5s ease;"></div>
-                    </div>
-                    <span style="font-size:16px;font-weight:700;color:${color};min-width:40px;">${pts.toFixed(1)}</span>
-                    <span style="font-size:11px;color:var(--text-muted);">/10</span>
-                </div>
-            </td>
-            <td class="actions" style="vertical-align:middle;white-space:nowrap;">
-                <button class="edit"   onclick="openEditRanking('${r.id}','${r.month}','${r.week}','${r.username}',${parseFloat(r.points_start||0)},${parseFloat(r.points_end||pts)},'${r.week_start||''}','${r.week_end||''}')">✏️</button>
-                <button class="delete" onclick="deleteRanking('${r.id}')">🗑️</button>
-            </td>`;
-        tbody.appendChild(row);
-    });
+    // Exibir mensagem existente
+    display.style.display = 'block';
+    document.getElementById('msg-preview').textContent = data.message;
+
+    const badge  = document.getElementById('msg-status-badge');
+    const toggleBtn = document.getElementById('msg-toggle-btn');
+    if (data.active) {
+        badge.textContent = '● Ativa';
+        badge.style.cssText = 'padding:4px 14px;border-radius:20px;font-size:12px;white-space:nowrap;background:rgba(34,197,94,0.15);color:#22c55e;border:1px solid rgba(34,197,94,0.3);';
+        toggleBtn.textContent = '⏸ Desativar';
+    } else {
+        badge.textContent = '○ Inativa';
+        badge.style.cssText = 'padding:4px 14px;border-radius:20px;font-size:12px;white-space:nowrap;background:rgba(255,255,255,0.05);color:var(--text-muted);border:1px solid var(--border-glass);';
+        toggleBtn.textContent = '▶ Ativar';
+    }
 }
 
-document.getElementById('add-ranking-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const month        = document.getElementById('ranking-month').value;
-    const week         = document.getElementById('ranking-week').value;
-    const week_start   = document.getElementById('ranking-week-start').value || null;
-    const week_end     = document.getElementById('ranking-week-end').value   || null;
-    const username     = document.getElementById('ranking-username').value.trim();
-    const points_start   = Math.min(10, Math.max(0, parseFloat(document.getElementById('ranking-points-start').value)||0));
-    const _endRaw          = document.getElementById('ranking-points-end').value;
-    const points_end       = _endRaw !== '' ? Math.min(10, Math.max(0, parseFloat(_endRaw)||0)) : null;
-    const points           = points_end !== null ? points_end : points_start;
+async function toggleCurrentMessage() {
+    if (!currentMessageData) return;
     showLoading(true);
-    const { data: ex } = await supabaseAdmin.from('rankings').select('id').eq('month',month).eq('week',week).eq('username',username).limit(1).single();
-    const result = ex
-        ? await supabaseAdmin.from('rankings').update({points, points_start, points_end, week_start, week_end}).eq('id',ex.id)
-        : await supabaseAdmin.from('rankings').insert([{month,week,username,points,points_start,points_end,week_start,week_end}]);
-    if (result.error) { showToast('Erro: '+result.error.message,'error'); showLoading(false); return; }
-    showToast(`"${username}" → ${points.toFixed(1)} pontos!`,'success');
-    closeModal('add-ranking-modal'); await loadRankingAdmin(); showLoading(false);
+    const newActive = !currentMessageData.active;
+    const { error } = await supabaseAdmin
+        .from('user_messages')
+        .update({ active: newActive })
+        .eq('id', currentMessageData.id);
+    if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
+    showToast(newActive ? 'Mensagem ativada!' : 'Mensagem desativada!', 'success');
+    await loadUserMessage();
+    showLoading(false);
+}
+
+function openEditCurrentMessage() {
+    if (!currentMessageData) return;
+    document.getElementById('edit-message-id').value       = currentMessageData.id;
+    document.getElementById('edit-message-username').value = allUsers.find(u => u.id === currentMessageData.user_id)?.username || '';
+    document.getElementById('edit-message-text').value     = currentMessageData.message;
+    document.getElementById('edit-message-active').checked = currentMessageData.active;
+    openModal('edit-message-modal');
+}
+
+async function deleteCurrentMessage() {
+    if (!currentMessageData) return;
+    if (!confirm('Excluir esta mensagem?')) return;
+    showLoading(true);
+    const { error } = await supabaseAdmin
+        .from('user_messages')
+        .delete()
+        .eq('id', currentMessageData.id);
+    if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
+    showToast('Mensagem excluída!', 'success');
+    currentMessageData = null;
+    await loadUserMessage();
+    showLoading(false);
+}
+
+document.getElementById('add-message-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const userId  = document.getElementById('message-user').value;
+    const message = document.getElementById('message-text').value.trim();
+    const active  = document.getElementById('message-active').checked;
+    if (!userId || !message) { showToast('Preencha todos os campos.', 'error'); return; }
+    showLoading(true);
+    // Desativar mensagens anteriores do usuário
+    await supabaseAdmin.from('user_messages').update({ active: false }).eq('user_id', userId);
+    const { error } = await supabaseAdmin.from('user_messages').insert([{ user_id: userId, message, active }]);
+    if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
+    showToast('Mensagem criada!', 'success');
+    closeModal('add-message-modal');
+    // Atualizar o filtro de usuário para mostrar a nova mensagem
+    const msgFilter = document.getElementById('msg-user-filter');
+    if (msgFilter) { msgFilter.value = userId; await loadUserMessage(); }
+    showLoading(false);
 });
 
-function openEditRanking(id,month,week,username,pStart,pEnd,weekStart,weekEnd) {
-    document.getElementById('edit-ranking-id').value              = id;
-    document.getElementById('edit-ranking-month').value           = month;
-    document.getElementById('edit-ranking-week').value            = week;
-    document.getElementById('edit-ranking-username').value        = username;
-    document.getElementById('edit-ranking-points-start').value    = pStart;
-    document.getElementById('edit-ranking-points-end').value      = pEnd;
-    document.getElementById('edit-ranking-week-start').value      = weekStart || '';
-    document.getElementById('edit-ranking-week-end').value        = weekEnd   || '';
-    openModal('edit-ranking-modal');
-}
-
-document.getElementById('edit-ranking-form')?.addEventListener('submit', async (e) => {
+document.getElementById('edit-message-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const id           = document.getElementById('edit-ranking-id').value;
-    const points_start    = Math.min(10, Math.max(0, parseFloat(document.getElementById('edit-ranking-points-start').value)||0));
-    const _endRawE         = document.getElementById('edit-ranking-points-end').value;
-    const points_end       = _endRawE !== '' ? Math.min(10, Math.max(0, parseFloat(_endRawE)||0)) : null;
-    const points           = points_end !== null ? points_end : points_start;
-    const week_start   = document.getElementById('edit-ranking-week-start').value || null;
-    const week_end     = document.getElementById('edit-ranking-week-end').value   || null;
+    const id      = document.getElementById('edit-message-id').value;
+    const message = document.getElementById('edit-message-text').value.trim();
+    const active  = document.getElementById('edit-message-active').checked;
     showLoading(true);
-    const { error } = await supabaseAdmin.from('rankings').update({points, points_start, points_end, week_start, week_end}).eq('id',id);
-    if (error) { showToast('Erro: '+error.message,'error'); showLoading(false); return; }
-    showToast(`Pontuação → ${points.toFixed(1)}!`,'success'); closeModal('edit-ranking-modal'); await loadRankingAdmin(); showLoading(false);
+    const { error } = await supabaseAdmin.from('user_messages').update({ message, active }).eq('id', id);
+    if (error) { showToast('Erro: ' + error.message, 'error'); showLoading(false); return; }
+    showToast('Mensagem atualizada!', 'success');
+    closeModal('edit-message-modal');
+    await loadUserMessage();
+    showLoading(false);
 });
-
-async function deleteRanking(id) {
-    if (!confirm('Remover?')) return; showLoading(true);
-    const { error } = await supabaseAdmin.from('rankings').delete().eq('id',id);
-    if (error) { showToast('Erro: '+error.message,'error'); showLoading(false); return; }
-    showToast('Removido!','success'); await loadRankingAdmin(); showLoading(false);
-}
 
 // =====================================================
 // UTILITÁRIOS
@@ -565,7 +731,6 @@ async function deleteRanking(id) {
 function showAdminSection(s) {
     document.querySelectorAll('.admin-menu button').forEach(b=>b.classList.toggle('active',b.dataset.section===s));
     document.querySelectorAll('.admin-section').forEach(x=>x.classList.toggle('active',x.id===`admin-${s}`));
-    if (s==='ranking') loadRankingAdmin();
 }
 function openModal(id)  { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); document.getElementById(id)?.querySelector('form')?.reset(); }
@@ -577,98 +742,3 @@ function showToast(msg,type='info') {
 }
 function logout() { supabaseAdmin.auth.signOut(); localStorage.clear(); window.location.href='login.html'; }
 document.addEventListener('click',e=>{ if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('active'); });
-
-// ─── COPIAR SEMANA INTEIRA ─────────────────────────────
-async function openCopyWeekModal() {
-    const fu = document.getElementById('pool-user-filter')?.value || '';
-    const fm = document.getElementById('pool-month-filter')?.value || '';
-    const fw = document.getElementById('pool-week-filter')?.value  || '';
-    if (fu) document.getElementById('cw-src-user').value  = fu;
-    if (fm) document.getElementById('cw-src-month').value = fm;
-    if (fw) document.getElementById('cw-src-week').value  = fw;
-    document.getElementById('cw-dst-month').value = fm || 'Janeiro';
-    document.getElementById('cw-dst-week').value  = '';
-    document.getElementById('cw-zero-profit').checked = true;
-    document.getElementById('cw-preview').innerHTML = '';
-    openModal('copy-week-modal');
-    await previewCopyWeek();
-}
-
-async function previewCopyWeek() {
-    const userId = document.getElementById('cw-src-user').value;
-    const month  = document.getElementById('cw-src-month').value;
-    const week   = document.getElementById('cw-src-week').value;
-    const box    = document.getElementById('cw-preview');
-    if (!userId || !month || !week) {
-        box.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Selecione usuário, mês e semana de origem.</p>';
-        return;
-    }
-    const { data, error } = await supabaseAdmin.from('pool_data').select('pool_name,initial_value,current_value,contribution_value,profit_value').eq('user_id',userId).eq('month',month).eq('week',week);
-    if (error || !data?.length) {
-        box.innerHTML = '<p style="color:#ef4444;font-size:13px;">Nenhuma pool encontrada para essa seleção.</p>';
-        return;
-    }
-    const zero = document.getElementById('cw-zero-profit').checked;
-    const rows = data.map(p => {
-        const newIni = parseFloat(p.current_value||0) > 0
-            ? parseFloat(p.current_value)
-            : parseFloat(p.initial_value||0)+parseFloat(p.contribution_value||0)+parseFloat(p.profit_value||0);
-        return `<tr><td style="padding:6px 8px;">${p.pool_name}</td>`
-            +`<td style="padding:6px 8px;color:#a855f7;">$${newIni.toFixed(2)}</td>`
-            +`<td style="padding:6px 8px;color:${zero?'#ef4444':'#22c55e'};">${zero?'zerado':'mantido'}</td></tr>`;
-    }).join('');
-    box.innerHTML = `<p style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">📋 ${data.length} pool(s) serão copiadas:</p>`
-        +`<table style="width:100%;font-size:13px;"><thead><tr>`
-        +`<th style="padding:6px 8px;text-align:left;color:var(--text-muted);">Pool</th>`
-        +`<th style="padding:6px 8px;text-align:left;color:var(--text-muted);">Novo Inicial</th>`
-        +`<th style="padding:6px 8px;text-align:left;color:var(--text-muted);">Lucro</th>`
-        +`</tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-document.getElementById('copy-week-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const userId   = document.getElementById('cw-src-user').value;
-    const srcMonth = document.getElementById('cw-src-month').value;
-    const srcWeek  = document.getElementById('cw-src-week').value;
-    const dstMonth = document.getElementById('cw-dst-month').value;
-    const dstWeek  = document.getElementById('cw-dst-week').value;
-    const zeroProfit = document.getElementById('cw-zero-profit').checked;
-
-    if (!userId||!srcMonth||!srcWeek||!dstMonth||!dstWeek) { showToast('Preencha todos os campos.','error'); return; }
-    if (srcMonth===dstMonth && srcWeek===dstWeek) { showToast('Origem e destino são iguais!','error'); return; }
-
-    showLoading(true);
-    const { data: pools, error } = await supabaseAdmin.from('pool_data').select('*').eq('user_id',userId).eq('month',srcMonth).eq('week',srcWeek);
-    if (error || !pools?.length) { showToast('Nenhuma pool encontrada na origem.','error'); showLoading(false); return; }
-
-    const inserts = pools.map(p => {
-        // O current_value da semana anterior vira o initial_value da nova
-        const newInitial = parseFloat(p.current_value||0) > 0
-            ? parseFloat(p.current_value)
-            : parseFloat(p.initial_value||0) + parseFloat(p.contribution_value||0) + parseFloat(p.profit_value||0);
-        return {
-            user_id:            p.user_id,
-            month:              dstMonth,
-            week:               dstWeek,
-            pool_name:          p.pool_name,
-            initial_value:      newInitial,
-            invested_value:     newInitial,
-            yield_percent:      zeroProfit ? 0 : (p.yield_percent||0),
-            contribution_value: 0,
-            profit_value:       zeroProfit ? 0 : (p.profit_value||0),
-            current_value:      0,
-            created_at:         new Date().toISOString()
-        };
-    });
-
-    const { error: ie } = await supabaseAdmin.from('pool_data').insert(inserts);
-    if (ie) { showToast('Erro ao inserir: '+ie.message,'error'); showLoading(false); return; }
-
-    showToast(`✅ ${inserts.length} pool(s) copiadas para ${dstMonth} / ${dstWeek}!`,'success');
-    closeModal('copy-week-modal');
-    document.getElementById('pool-user-filter').value  = userId;
-    document.getElementById('pool-month-filter').value = dstMonth;
-    document.getElementById('pool-week-filter').value  = dstWeek;
-    await loadUserPools();
-    showLoading(false);
-});

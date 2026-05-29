@@ -26,10 +26,6 @@
             vertical-align: middle;
             line-height: 1;
         }
-        /* Linha do ranking com altura mínima para acomodar a barra de progresso */
-        #ranking-table-body tr {
-            height: 56px;
-        }
         /* Todas as seções admin sempre visíveis */
         .admin-section {
             display: block !important;
@@ -50,7 +46,7 @@
 
 <div class="dashboard">
   <div class="dashboard-header">
-    <div><h1>Painel Administrativo</h1><p style="color:var(--text-secondary);">Gerencie usuários, pools, AAVE e ranking</p></div>
+    <div><h1>Painel Administrativo</h1><p style="color:var(--text-secondary);">Gerencie usuários, pools e AAVE</p></div>
     <div class="user-info"><div class="user-avatar" style="background:linear-gradient(135deg,#ef4444,#dc2626);" id="admin-avatar">A</div></div>
   </div>
 
@@ -140,27 +136,7 @@
         <p id="aave-no-data" style="text-align:center;color:var(--text-secondary);padding:40px;display:none;">Selecione um usuário.</p>
       </div>
 
-      <!-- RANKING -->
-      <div id="admin-ranking" class="admin-section">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:16px;">
-          <h2>Gerenciar Ranking</h2><button class="neon-btn" onclick="openModal('add-ranking-modal')">+ Lançar Semana</button>
-        </div>
-        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Lance o valor por membro por semana. O ranking público exibe a semana mais recente automaticamente.</p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
-          <div class="form-group" style="margin:0;"><label style="font-size:12px;">Mês</label>
-            <select id="ranking-month-filter" onchange="loadRankingAdmin()"><option value="">Todos</option><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select>
-          </div>
-          <div class="form-group" style="margin:0;"><label style="font-size:12px;">Semana</label>
-            <select id="ranking-week-filter" onchange="loadRankingAdmin()"><option value="">Todas</option><option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option></select>
-          </div>
-        </div>
-        <div class="data-table-container"><table class="data-table">
-          <thead><tr><th>Período</th><th>Semana</th><th>Membro</th><th>Pontuação</th><th>Ações</th></tr></thead>
-          <tbody id="ranking-table-body"><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Carregando...</td></tr></tbody>
-        </table></div>
-      </div>
-
-      <!-- MENSAGENS DE BOAS-VINDAS -->
+<!-- MENSAGENS DE BOAS-VINDAS -->
       <div id="admin-messages" class="admin-section">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:16px;">
           <h2>💬 Mensagens de Boas-Vindas</h2>
@@ -368,42 +344,6 @@
     <hr style="border-color:var(--border-glass);margin:8px 0;">
     <div class="form-group"><label>Valor Emprestado Total (USD) *</label><input type="number" id="edit-aave-borrow" step="0.01" min="0" required placeholder="Ex: 73.15"></div>
     <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('edit-aave-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
-  </form>
-</div></div>
-
-<div class="modal-overlay" id="add-ranking-modal"><div class="modal"><h3>🏆 Lançar Ranking da Semana</h3>
-  <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">A pontuação define o tamanho da vela. 10 = máximo, 0 = mínimo.</p>
-  <form id="add-ranking-form">
-    <div class="form-group"><label>Mês *</label><select id="ranking-month" required><option>Janeiro</option><option>Fevereiro</option><option>Março</option><option>Abril</option><option>Maio</option><option>Junho</option><option>Julho</option><option>Agosto</option><option>Setembro</option><option>Outubro</option><option>Novembro</option><option>Dezembro</option></select></div>
-    <div class="form-group"><label>Semana *</label><select id="ranking-week" required><option>Semana 1</option><option>Semana 2</option><option>Semana 3</option><option>Semana 4</option><option>Semana 5</option><option>Total do Mês</option></select></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div class="form-group"><label>Início da Semana *</label><input type="date" id="ranking-week-start" required></div>
-      <div class="form-group"><label>Fim da Semana *</label><input type="date" id="ranking-week-end" required></div>
-    </div>
-    <div class="form-group"><label>Nome do Membro *</label><input type="text" id="ranking-username" required placeholder="Ex: Matheus"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div class="form-group"><label>Pontos início *</label><input type="number" id="ranking-points-start" step="0.1" min="0" max="10" required placeholder="Ex: 5.0"></div>
-      <div class="form-group"><label>Pontos fim <span style="color:var(--text-muted);font-size:11px;">(opcional — preencher só ao final)</span></label><input type="number" id="ranking-points-end" step="0.1" min="0" max="10" placeholder="Ex: 7.5"></div>
-    </div>
-    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('add-ranking-modal')">Cancelar</button><button type="submit" class="neon-btn">Lançar</button></div>
-  </form>
-</div></div>
-
-<div class="modal-overlay" id="edit-ranking-modal"><div class="modal"><h3>Editar Ranking</h3>
-  <form id="edit-ranking-form">
-    <input type="hidden" id="edit-ranking-id">
-    <div class="form-group"><label>Mês</label><input type="text" id="edit-ranking-month" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
-    <div class="form-group"><label>Semana</label><input type="text" id="edit-ranking-week" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
-    <div class="form-group"><label>Membro</label><input type="text" id="edit-ranking-username" readonly style="background:rgba(255,255,255,0.05);color:var(--text-muted);"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div class="form-group"><label>Início da Semana</label><input type="date" id="edit-ranking-week-start"></div>
-      <div class="form-group"><label>Fim da Semana</label><input type="date" id="edit-ranking-week-end"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-      <div class="form-group"><label>Pontos início *</label><input type="number" id="edit-ranking-points-start" step="0.1" min="0" max="10" required></div>
-      <div class="form-group"><label>Pontos fim <span style="color:var(--text-muted);font-size:11px;">(opcional)</span></label><input type="number" id="edit-ranking-points-end" step="0.1" min="0" max="10"></div>
-    </div>
-    <div class="modal-actions"><button type="button" class="outline-btn" onclick="closeModal('edit-ranking-modal')">Cancelar</button><button type="submit" class="neon-btn">Salvar</button></div>
   </form>
 </div></div>
 

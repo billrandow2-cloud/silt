@@ -39,14 +39,7 @@
         .silt-desc  { font-size:13px; color:var(--text-secondary); line-height:1.5; }
         .silt-icon  { font-size:28px; margin-bottom:16px; display:block; }
 
-        /* Toggle */
-        .toggle-group { display:inline-flex; background:rgba(255,255,255,.05); border:1px solid rgba(168,85,247,.2); border-radius:10px; padding:4px; gap:4px; }
-        .toggle-btn   { padding:8px 20px; border-radius:7px; border:none; cursor:pointer; font-size:13px; font-weight:600; transition:all .25s ease; color:var(--text-muted); background:transparent; }
-        .toggle-btn.toggle-active { background:linear-gradient(135deg,var(--neon-purple),var(--neon-purple-dark)); color:#fff; box-shadow:0 0 16px rgba(168,85,247,.5); }
-        .toggle-btn:not(.toggle-active):hover { color:var(--text-primary); background:rgba(255,255,255,.06); }
 
-        #ranking-prev:hover,#ranking-next:hover { border-color:var(--neon-purple)!important; color:var(--neon-purple)!important; }
-        #ranking-prev:disabled,#ranking-next:disabled { opacity:.3; cursor:not-allowed; }
     </style>
 </head>
 <body>
@@ -153,23 +146,6 @@
         <h2 style="text-align:center;font-size:36px;margin-bottom:12px;"><span class="gradient-text">🏆 Ranking</span></h2>
         <p style="text-align:center;color:var(--text-secondary);margin-bottom:20px;">Quem tem a vela maior é o líder</p>
 
-        <!-- Toggle Semanal/Mensal/Patrimônio -->
-        <div style="display:flex;justify-content:center;margin-bottom:16px;">
-            <div class="toggle-group">
-                <button id="btn-period-weekly" class="toggle-btn toggle-active">📅 Semanal</button>
-                <button id="btn-period-monthly" class="toggle-btn">📊 Mensal</button>
-                <button id="btn-period-patrimonio" class="toggle-btn">💎 Patrimônio</button>
-            </div>
-        </div>
-
-        <!-- Toggle início/fim — só aparece se tiver points_end > 0 -->
-        <div id="ranking-toggle-wrap" style="display:none;justify-content:center;margin-bottom:20px;">
-            <div class="toggle-group">
-                <button id="btn-view-start" class="toggle-btn toggle-active">📅 Início da semana</button>
-                <button id="btn-view-end"   class="toggle-btn">🏁 Fim da semana</button>
-            </div>
-        </div>
-
         <!-- Labels -->
         <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap;">
             <span id="ranking-month-label" style="color:var(--neon-purple,#a855f7);font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1px;"></span>
@@ -184,12 +160,7 @@
             <span id="ranking-chart-title" style="color:var(--text-muted);font-size:13px;"></span>
         </div>
 
-        <!-- Navegação -->
-        <div id="ranking-nav-controls" style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
-            <button id="ranking-prev" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--text-secondary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s;">← Anterior</button>
-            <select id="ranking-period-select" style="background:rgba(255,255,255,.05);border:1px solid rgba(168,85,247,.2);color:var(--text-primary);padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;max-width:260px;"></select>
-            <button id="ranking-next" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--text-secondary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;transition:all .2s;">Próximo →</button>
-        </div>
+
 
         <!-- Velas -->
         <div class="glass-card" style="padding:28px;min-height:400px;display:flex;align-items:flex-end;justify-content:center;">
@@ -208,8 +179,6 @@
             <span style="display:flex;align-items:center;gap:6px;color:var(--text-secondary);font-size:12px;"><span style="width:14px;height:14px;background:linear-gradient(180deg,#a855f7,#7c3aed);border-radius:3px;display:inline-block;"></span>Demais</span>
         </div>
 
-        <!-- Evolução (aparece automaticamente se houver 2+ períodos) -->
-        <div id="ranking-evolution" class="glass-card" style="margin-top:28px;padding:24px;display:none;"></div>
     </section>
 
     <!-- ══════ SOBRE ══════ -->
